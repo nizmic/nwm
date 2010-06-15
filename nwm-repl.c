@@ -47,7 +47,7 @@ int main(int argc, char **argv)
 
     char *line = NULL;
     char buf[4096];
-    while ((line = readline("nwm-repl% "))) {
+    while ((line = readline("nwm-repl# "))) {
         if (*line) { /* not an empty line */
             write(sockfd, line, strlen(line));
             add_history(line);
