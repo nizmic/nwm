@@ -54,7 +54,7 @@ int main(int argc, char **argv)
         fprintf(stderr, "repl%% ");
         gets(line);
         write(sockfd, line, strlen(line));
-        int n = read(sockfd, buf, 4096);
+        read(sockfd, buf, 4096);
         fprintf(stderr, "\n%s\n\n", buf);
     }
 
