@@ -26,6 +26,7 @@
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <readline/readline.h>
+#include <readline/history.h>
 
 int main(int argc, char **argv)
 {
@@ -51,8 +52,11 @@ int main(int argc, char **argv)
     while (1) {
         line = readline("repl%");
         write(sockfd, line, strlen(line));
-        if (line)
+        if (line) {
+            if (*line) /* not an empty line */
+                add_history(line);
             free(line);
+        }
         read(sockfd, buf, 4096);
         fprintf(stderr, "\n%s\n\n", buf);
     }
