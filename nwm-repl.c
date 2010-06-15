@@ -45,23 +45,19 @@ int main(int argc, char **argv)
         exit(1);
     }
 
-    fprintf(stderr, "connect succeeded!\n");
-
     char *line = NULL;
     char buf[4096];
-    while (1) {
-        line = readline("repl%");
-        write(sockfd, line, strlen(line));
-        if (line) {
-            if (*line) /* not an empty line */
-                add_history(line);
-            free(line);
+    while ((line = readline("nwm-repl% "))) {
+        if (*line) { /* not an empty line */
+            write(sockfd, line, strlen(line));
+            add_history(line);
+            read(sockfd, buf, 4096);
+            fprintf(stderr, "\n%s\n\n", buf);
         }
-        read(sockfd, buf, 4096);
-        fprintf(stderr, "\n%s\n\n", buf);
+        free(line);
     }
 
-    fprintf(stderr, "nothing to do... closing connection\n");
+    fprintf(stderr, "\n");
     close(sockfd);
 
     exit(0);
