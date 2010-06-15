@@ -55,7 +55,7 @@ int main(int argc, char **argv)
         gets(line);
         write(sockfd, line, strlen(line));
         int n = read(sockfd, buf, 4096);
-        fprintf(stderr, "%s\n\n", buf);
+        fprintf(stderr, "\n%s\n\n", buf);
     }
 
     fprintf(stderr, "nothing to do... closing connection\n");
