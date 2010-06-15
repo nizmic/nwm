@@ -18,7 +18,7 @@
 #
 
 CFLAGS = -Wall `pkg-config --cflags xcb xcb-aux xcb-event xcb-keysyms xcb-xinerama glib-2.0` `guile-config compile`
-LIBS = `pkg-config --libs xcb xcb-aux xcb-event xcb-keysyms xcb-xinerama glib-2.0` `guile-config link`
+LIBS = `pkg-config --libs xcb xcb-aux xcb-event xcb-keysyms xcb-xinerama glib-2.0` `guile-config link` -lreadline
 
 .PHONY: clean build
 
