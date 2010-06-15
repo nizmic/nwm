@@ -61,7 +61,7 @@ size_t io_buffer_available(io_buffer_t *buf)
     return (&buf->buf[BUFSIZE] - buf->end_p);
 }
 
-ssize_t io_buffer_write(io_buffer_t *buf, char *src, size_t count)
+ssize_t io_buffer_write(io_buffer_t *buf, const char *src, size_t count)
 {
     if (io_buffer_available(buf) < count)
         return -1;  /* buffer too full */

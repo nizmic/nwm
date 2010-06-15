@@ -20,6 +20,7 @@
 #include <libguile.h>
 
 #include "nwm.h"
+#include "repl-server.h"
 #include "scheme.h"
 
 scm_t_bits window_tag;
