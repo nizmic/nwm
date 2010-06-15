@@ -46,15 +46,9 @@ int main(int argc, char **argv)
 
     fprintf(stderr, "connect succeeded!\n");
 
-    /*char *msg = "hello hello mr server\n";
-      write(sockfd, msg, strlen(msg));*/
-
-    /* char line[4096]; */
     char *line = NULL;
     char buf[4096];
     while (1) {
-        /* fprintf(stderr, "repl%% "); */
-        /* gets(line); */
         line = readline("repl%");
         write(sockfd, line, strlen(line));
         if (line)
