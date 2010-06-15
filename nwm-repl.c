@@ -51,8 +51,8 @@ int main(int argc, char **argv)
         if (*line) { /* not an empty line */
             write(sockfd, line, strlen(line));
             add_history(line);
-            read(sockfd, buf, 4096);
-            fprintf(stderr, "\n%s\n\n", buf);
+            if (read(sockfd, buf, 4096) > 0)
+                fprintf(stderr, "%s", buf);
         }
         free(line);
     }

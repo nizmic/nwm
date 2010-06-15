@@ -226,16 +226,28 @@ void repl_conn_eval_lisp(repl_conn_t *conn)
                           eval_lisp, lisp,
                           handle_lisp_error, NULL,
                           NULL, NULL);
-    SCM str_scm = scm_object_to_string(res, write_scm);
-    char *str = scm_to_locale_string(str_scm);
-    fprintf(stderr, "    result is '%s'\n", str);
 
-    /* copy result into write buffer */
-    if (io_buffer_write(&conn->write_buf, str, strlen(str)+1) < 0)
-        fprintf(stderr, "write buffer overflow for socket %d\n", conn->sockfd);
+    char *res_str = "\0";
+    if (res != SCM_UNSPECIFIED) {
+        SCM str_scm = scm_object_to_string(res, write_scm);
+        res_str = scm_to_locale_string(str_scm);
+    }
+
+    fprintf(stderr, "    result is '%s'\n", res_str);
+    
+    /* copy result into write buffer - little messy right now*/
+    if (res == SCM_UNSPECIFIED) {
+        /* write the string including null byte */
+        io_buffer_write(&conn->write_buf, res_str, strlen(res_str)+1);
+    }
+    else {
+        /* write the string without null byte */
+        io_buffer_write(&conn->write_buf, res_str, strlen(res_str));
+        /* write newline and null byte */
+        io_buffer_write(&conn->write_buf, "\n", 2);
+    }
 
     io_buffer_reset(&conn->read_buf);
-
     free(lisp);
 }
 
