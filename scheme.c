@@ -23,23 +23,23 @@
 #include "repl-server.h"
 #include "scheme.h"
 
-scm_t_bits window_tag;
+scm_t_bits client_tag;
 
-static SCM mark_window(SCM window_smob)
+static SCM mark_client(SCM client_smob)
 {
     return SCM_BOOL_F;
 }
 
-static size_t free_window(SCM window_smob)
+static size_t free_client(SCM client_smob)
 {
     return 0;
 }
 
-static int print_window(SCM window_smob, SCM port, scm_print_state *pstate)
+static int print_client(SCM client_smob, SCM port, scm_print_state *pstate)
 {
-    client_t *client = (client_t *)SCM_SMOB_DATA(window_smob);
+    client_t *client = (client_t *)SCM_SMOB_DATA(client_smob);
 
-    scm_puts("#<window ", port);
+    scm_puts("#<client ", port);
     scm_display(scm_from_unsigned_integer(client->window), port);
     scm_puts(">", port);
 
@@ -47,12 +47,12 @@ static int print_window(SCM window_smob, SCM port, scm_print_state *pstate)
     return 1;
 }
 
-static void init_window_type(void)
+static void init_client_type(void)
 {
-    window_tag = scm_make_smob_type("window", sizeof(client_t));
-    scm_set_smob_mark(window_tag, mark_window);
-    scm_set_smob_free(window_tag, free_window);
-    scm_set_smob_print(window_tag, print_window);
+    client_tag = scm_make_smob_type("client", sizeof(client_t));
+    scm_set_smob_mark(client_tag, mark_client);
+    scm_set_smob_free(client_tag, free_client);
+    scm_set_smob_print(client_tag, print_client);
 }
 
 
@@ -62,30 +62,30 @@ static SCM nwm_stop(void)
     return SCM_BOOL_T;
 }
 
-static SCM count_windows(void)
+static SCM count_clients(void)
 {
     guint len = g_list_length(client_list);
     return scm_from_unsigned_integer(len);
 }
 
-static SCM all_windows(void)
+static SCM all_clients(void)
 {
-    SCM windows = SCM_EOL;
+    SCM clients = SCM_EOL;
     SCM smob;
     GList *node = client_list;
     while (node) {
-        SCM_NEWSMOB(smob, window_tag, (client_t *)node->data);
-        windows = scm_append(scm_list_2(windows, scm_list_1(smob)));
+        SCM_NEWSMOB(smob, client_tag, (client_t *)node->data);
+        clients = scm_append(scm_list_2(clients, scm_list_1(smob)));
         node = node->next;
     }
-    return windows;
+    return clients;
 }
 
-static SCM first_window(void)
+static SCM first_client(void)
 {
-    SCM window;
-    SCM_NEWSMOB(window, window_tag, (client_t *)client_list->data);
-    return window;
+    SCM client;
+    SCM_NEWSMOB(client, client_tag, (client_t *)client_list->data);
+    return client;
 }
 
 static SCM test_undefined(void)
@@ -96,13 +96,13 @@ static SCM test_undefined(void)
 void *init_scheme(void *data)
 {
     scm_c_define_gsubr("nwm-stop", 0, 0, 0, &nwm_stop);
-    scm_c_define_gsubr("count-windows", 0, 0, 0, &count_windows);
+    scm_c_define_gsubr("count-clients", 0, 0, 0, &count_clients);
 
-    scm_c_define_gsubr("all-windows", 0, 0, 0, &all_windows);
-    scm_c_define_gsubr("first-window", 0, 0, 0, &first_window);
+    scm_c_define_gsubr("all-clients", 0, 0, 0, &all_clients);
+    scm_c_define_gsubr("first-client", 0, 0, 0, &first_client);
     scm_c_define_gsubr("test-undefined", 0, 0, 0, &test_undefined);
 
-    init_window_type();
+    init_client_type();
 
     init_io_buffer_ports();
 
