@@ -270,6 +270,33 @@ int already_managing_window(xcb_window_t win)
     return 0;
 }
 
+/* Use the geometry data from client structure to configure the X window */
+void update_client_geometry(client_t *client)
+{
+    uint16_t config_win_mask = 0;
+    uint32_t config_win_vals[5];
+
+    config_win_mask |= (XCB_CONFIG_WINDOW_X | XCB_CONFIG_WINDOW_Y
+                        | XCB_CONFIG_WINDOW_WIDTH | XCB_CONFIG_WINDOW_HEIGHT
+                        | XCB_CONFIG_WINDOW_BORDER_WIDTH);
+
+    fprintf(stderr, "updating geometry for window %u to (%d,%d) + (%u,%u), border width=%u\n",
+            client->window,
+            client->rect.x,
+            client->rect.y,
+            client->rect.width,
+            client->rect.height,
+            client->border_width);
+    config_win_vals[0] = client->rect.x;
+    config_win_vals[1] = client->rect.y;
+    config_win_vals[2] = client->rect.width;
+    config_win_vals[3] = client->rect.height;
+    config_win_vals[4] = client->border_width;
+
+    xcb_configure_window(wm_conf.connection, client->window, config_win_mask, config_win_vals);
+}
+
+/* Read the X window geometry and record it in the client structure */
 void read_client_geometry(client_t *client)
 {
     xcb_get_geometry_cookie_t geometry_cookie;
@@ -289,28 +316,55 @@ void read_client_geometry(client_t *client)
     }
 }
 
+void arrange(void)
+{
+    guint clients_len = g_list_length(client_list);
+    fprintf(stderr, "arranging %u windows\n", clients_len);
+    int i = 1;
+    uint16_t screen_width = wm_conf.screen->width_in_pixels;
+    uint16_t screen_height = wm_conf.screen->height_in_pixels;
+    GList *node = client_list;
+    while (i < clients_len) {
+        client_t *client = node->data;
+        client->rect.x = i * (screen_width / clients_len);
+        client->rect.y = 0;
+        client->rect.width = (screen_width / clients_len);
+        client->rect.height = screen_height;
+        client->border_width = 0;
+
+        update_client_geometry(client);
+
+        ++i;
+        node = node->next;
+    }
+}
+
+client_t *manage_window(xcb_window_t window)
+{
+    fprintf(stderr, "manage window %u\n", window);
+    client_t *client = client_init(client_alloc());
+    client->window = window;
+    client_list = g_list_append(client_list, client);
+
+    read_client_geometry(client);
+
+    /* Make adjustments */
+
+    update_client_geometry(client);
+
+    xcb_map_window(wm_conf.connection, client->window);
+
+    arrange();
+
+    return client;    
+}
+
 int handle_map_request_event(void *data, xcb_connection_t *c, xcb_map_request_event_t *event)
 {
     print_x_event((xcb_generic_event_t *)event);
     fprintf(stderr, "  parent: %u\n", event->parent);
     fprintf(stderr, "  window: %u\n", event->window);
     fprintf(stderr, "  -------\n");
-
-
-    client_t *client = NULL;
-
-    fprintf(stderr, "  checking whether we're already managing this window\n");
-    client = find_client(event->window);
-    if (client) {
-        fprintf(stderr, "  yes, we are\n");
-    }
-    else {
-        fprintf(stderr, "  no, we are not\n");
-        fprintf(stderr, "  adding window to client list\n");
-        client = client_init(client_alloc());
-        client->window = event->window;
-        client_list = g_list_append(client_list, client);
-    }
 
     xcb_get_window_attributes_cookie_t win_attrs_cookie;
     xcb_get_window_attributes_reply_t *win_attrs_reply;
@@ -323,17 +377,30 @@ int handle_map_request_event(void *data, xcb_connection_t *c, xcb_map_request_ev
         return -1;
     }
 
-    if (win_attrs_reply->override_redirect)
-        fprintf(stderr, "  window has override redirect set\n");
+    if (win_attrs_reply->override_redirect) {
+        fprintf(stderr, "  window has override redirect set - ignoring map request\n");
+        return 0;
+    }
 
-    read_client_geometry(client);
+    client_t *client = NULL;
 
-    fprintf(stderr, "  fuck it, mapping window regardless\n");
-    /* hacktastic */
-    xcb_map_window(c, event->parent); /* should be the root window for my test */
+    fprintf(stderr, "  checking whether we're already managing this window\n");
+    client = find_client(event->window);
+    if (client) {
+        fprintf(stderr, "  yes, we are\n");
+    }
+    else {
+        fprintf(stderr, "  no, we are not\n");
+        client = manage_window(event->window);
+    }
+
+    /* xcb_map_window(c, event->parent); */
     xcb_map_window(c, event->window);
 
+    arrange();
+
     free(win_attrs_reply);
+
     return 0;
 }
 
