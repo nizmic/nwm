@@ -270,6 +270,14 @@ int already_managing_window(xcb_window_t win)
     return 0;
 }
 
+/* Used only by the scheme procs right now */
+void map_client(client_t *client)
+{
+    xcb_map_window(wm_conf.connection, client->window);
+    /* the map won't happen immediately unless we flush the connection */
+    xcb_flush(wm_conf.connection);
+}
+
 /* Use the geometry data from client structure to configure the X window */
 void update_client_geometry(client_t *client)
 {

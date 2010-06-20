@@ -55,4 +55,7 @@ typedef struct {
 
 extern GList *client_list;
 
+void update_client_geometry(client_t *);
+void map_client(client_t *);
+
 #endif

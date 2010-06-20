@@ -55,6 +55,30 @@ static void init_client_type(void)
     scm_set_smob_print(client_tag, print_client);
 }
 
+static SCM client_move(SCM client_smob, SCM x, SCM y)
+{
+    client_t *client = (client_t *)SCM_SMOB_DATA(client_smob);
+    client->rect.x = scm_to_int16(x);
+    client->rect.y = scm_to_int16(y);
+    update_client_geometry(client);
+    return SCM_UNSPECIFIED;
+}
+
+static SCM client_resize(SCM client_smob, SCM width, SCM height)
+{
+    client_t *client = (client_t *)SCM_SMOB_DATA(client_smob);
+    client->rect.width = scm_to_uint16(width);
+    client->rect.height = scm_to_uint16(height);
+    update_client_geometry(client);
+    return SCM_UNSPECIFIED;
+}
+
+static SCM client_map(SCM client_smob)
+{
+    client_t *client = (client_t *)SCM_SMOB_DATA(client_smob);
+    map_client(client);
+    return SCM_UNSPECIFIED;
+}
 
 static SCM nwm_stop(void)
 {
@@ -101,6 +125,10 @@ void *init_scheme(void *data)
     scm_c_define_gsubr("all-clients", 0, 0, 0, &all_clients);
     scm_c_define_gsubr("first-client", 0, 0, 0, &first_client);
     scm_c_define_gsubr("test-undefined", 0, 0, 0, &test_undefined);
+
+    scm_c_define_gsubr("client-move", 3, 0, 0, &client_move);
+    scm_c_define_gsubr("client-resize", 3, 0, 0, &client_resize);
+    scm_c_define_gsubr("client-map", 1, 0, 0, &client_map);
 
     init_client_type();
 
