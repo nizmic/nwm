@@ -120,6 +120,8 @@ int handle_button_release_event(void *data, xcb_connection_t *c, xcb_button_pres
     return 0;
 }
 
+
+
 int handle_configure_request_event(void *data, xcb_connection_t *c, xcb_configure_request_event_t *event)
 {
     print_x_event((xcb_generic_event_t *)event);
@@ -268,7 +270,7 @@ int already_managing_window(xcb_window_t win)
     return 0;
 }
 
-void update_client_geometry(client_t *client)
+void read_client_geometry(client_t *client)
 {
     xcb_get_geometry_cookie_t geometry_cookie;
     xcb_get_geometry_reply_t *geometry_reply;
@@ -324,7 +326,7 @@ int handle_map_request_event(void *data, xcb_connection_t *c, xcb_map_request_ev
     if (win_attrs_reply->override_redirect)
         fprintf(stderr, "  window has override redirect set\n");
 
-    update_client_geometry(client);
+    read_client_geometry(client);
 
     fprintf(stderr, "  fuck it, mapping window regardless\n");
     /* hacktastic */
@@ -448,7 +450,7 @@ void scan_windows(void)
                 client->window = child_win;
                 client_list = g_list_append(client_list, client);
             }
-            update_client_geometry(client);
+            read_client_geometry(client);
         }
     }
 
