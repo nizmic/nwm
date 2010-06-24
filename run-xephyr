@@ -1,0 +1,3 @@
+#!/bin/sh -
+
+Xephyr -keybd ephyr,,xkbmodel=evdev -screen 600x400 :1 &
