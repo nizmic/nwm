@@ -55,7 +55,7 @@ static void init_client_type(void)
     scm_set_smob_print(client_tag, print_client);
 }
 
-static SCM client_move(SCM client_smob, SCM x, SCM y)
+static SCM scm_move_client(SCM client_smob, SCM x, SCM y)
 {
     client_t *client = (client_t *)SCM_SMOB_DATA(client_smob);
     client->rect.x = scm_to_int16(x);
@@ -64,7 +64,7 @@ static SCM client_move(SCM client_smob, SCM x, SCM y)
     return SCM_UNSPECIFIED;
 }
 
-static SCM client_resize(SCM client_smob, SCM width, SCM height)
+static SCM scm_resize_client(SCM client_smob, SCM width, SCM height)
 {
     client_t *client = (client_t *)SCM_SMOB_DATA(client_smob);
     client->rect.width = scm_to_uint16(width);
@@ -73,26 +73,26 @@ static SCM client_resize(SCM client_smob, SCM width, SCM height)
     return SCM_UNSPECIFIED;
 }
 
-static SCM client_map(SCM client_smob)
+static SCM scm_map_client(SCM client_smob)
 {
     client_t *client = (client_t *)SCM_SMOB_DATA(client_smob);
     map_client(client);
     return SCM_UNSPECIFIED;
 }
 
-static SCM nwm_stop(void)
+static SCM scm_nwm_stop(void)
 {
     wm_conf.stop = true;
     return SCM_BOOL_T;
 }
 
-static SCM count_clients(void)
+static SCM scm_count_clients(void)
 {
     guint len = g_list_length(client_list);
     return scm_from_unsigned_integer(len);
 }
 
-static SCM all_clients(void)
+static SCM scm_all_clients(void)
 {
     SCM clients = SCM_EOL;
     SCM smob;
@@ -105,30 +105,30 @@ static SCM all_clients(void)
     return clients;
 }
 
-static SCM first_client(void)
+static SCM scm_first_client(void)
 {
     SCM client;
     SCM_NEWSMOB(client, client_tag, (client_t *)client_list->data);
     return client;
 }
 
-static SCM test_undefined(void)
+static SCM scm_test_undefined(void)
 {
     return SCM_EOL;
 }
 
 void *init_scheme(void *data)
 {
-    scm_c_define_gsubr("nwm-stop", 0, 0, 0, &nwm_stop);
-    scm_c_define_gsubr("count-clients", 0, 0, 0, &count_clients);
+    scm_c_define_gsubr("nwm-stop", 0, 0, 0, &scm_nwm_stop);
+    scm_c_define_gsubr("count-clients", 0, 0, 0, &scm_count_clients);
 
-    scm_c_define_gsubr("all-clients", 0, 0, 0, &all_clients);
-    scm_c_define_gsubr("first-client", 0, 0, 0, &first_client);
-    scm_c_define_gsubr("test-undefined", 0, 0, 0, &test_undefined);
+    scm_c_define_gsubr("all-clients", 0, 0, 0, &scm_all_clients);
+    scm_c_define_gsubr("first-client", 0, 0, 0, &scm_first_client);
+    scm_c_define_gsubr("test-undefined", 0, 0, 0, &scm_test_undefined);
 
-    scm_c_define_gsubr("client-move", 3, 0, 0, &client_move);
-    scm_c_define_gsubr("client-resize", 3, 0, 0, &client_resize);
-    scm_c_define_gsubr("client-map", 1, 0, 0, &client_map);
+    scm_c_define_gsubr("move-client", 3, 0, 0, &scm_move_client);
+    scm_c_define_gsubr("resize-client", 3, 0, 0, &scm_resize_client);
+    scm_c_define_gsubr("map-client", 1, 0, 0, &scm_map_client);
 
     init_client_type();
 
