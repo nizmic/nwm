@@ -170,6 +170,16 @@ static SCM scm_dump_client(SCM client_smob)
     return SCM_UNSPECIFIED;
 }
 
+static SCM scm_screen_width(void)
+{
+    return scm_from_unsigned_integer(wm_conf.screen->width_in_pixels);
+}
+
+static SCM scm_screen_height(void)
+{
+    return scm_from_unsigned_integer(wm_conf.screen->height_in_pixels);
+}
+
 void *init_scheme(void *data)
 {
     scm_c_define_gsubr("nwm-stop", 0, 0, 0, &scm_nwm_stop);
@@ -187,6 +197,9 @@ void *init_scheme(void *data)
     scm_c_define_gsubr("client-y", 1, 0, 0, &scm_client_y);
     scm_c_define_gsubr("client-width", 1, 0, 0, &scm_client_width);
     scm_c_define_gsubr("client-height", 1, 0, 0, &scm_client_height);
+
+    scm_c_define_gsubr("screen-width", 0, 0, 0, &scm_screen_width);
+    scm_c_define_gsubr("screen-height", 0, 0, 0, &scm_screen_height);
 
     init_client_type();
 
