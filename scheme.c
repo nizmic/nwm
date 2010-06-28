@@ -17,6 +17,9 @@
  * 02110-1301, USA 
  */
 
+#define _GNU_SOURCE
+#include <stdio.h>
+
 #include <libguile.h>
 
 #include "nwm.h"
@@ -117,6 +120,28 @@ static SCM scm_test_undefined(void)
     return SCM_EOL;
 }
 
+static SCM scm_dump_client(SCM client_smob)
+{
+    client_t *client = (client_t *)SCM_SMOB_DATA(client_smob);
+
+    SCM out_port = scm_current_output_port();
+    /* scm_puts("blah blah\n", out_port); */
+
+    char *str = NULL;
+    int len;
+    if ((len = asprintf(&str, "(%u x %u)\n", client->rect.width, client->rect.height)) < 0) {
+        fprintf(stderr, "asprintf failed\n");
+        /* not sure what to return here, will figure it out later */
+        return SCM_UNSPECIFIED;
+    }
+
+    scm_c_write(out_port, str, len);
+
+    free(str);
+
+    return SCM_UNSPECIFIED;
+}
+
 void *init_scheme(void *data)
 {
     scm_c_define_gsubr("nwm-stop", 0, 0, 0, &scm_nwm_stop);
@@ -129,6 +154,7 @@ void *init_scheme(void *data)
     scm_c_define_gsubr("move-client", 3, 0, 0, &scm_move_client);
     scm_c_define_gsubr("resize-client", 3, 0, 0, &scm_resize_client);
     scm_c_define_gsubr("map-client", 1, 0, 0, &scm_map_client);
+    scm_c_define_gsubr("dump-client", 1, 0, 0, &scm_dump_client);
 
     init_client_type();
 

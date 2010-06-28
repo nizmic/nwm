@@ -362,7 +362,7 @@ client_t *manage_window(xcb_window_t window)
 
     xcb_map_window(wm_conf.connection, client->window);
 
-    arrange();
+    /* arrange(); */
 
     return client;    
 }
