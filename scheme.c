@@ -128,11 +128,12 @@ static SCM scm_dump_client(SCM client_smob)
 
     char *str = NULL;
     int len;
-    const char *fmt = "window: %u\nposition: (%d, %d)\nsize: %u x %u\n";
+    const char *fmt = "window: %u\nposition: (%d, %d)\nsize: %u x %u\nborder width: %u\n";
     if ((len = asprintf(&str, fmt, 
                         client->window,
                         client->rect.x, client->rect.y,
-                        client->rect.width, client->rect.height)) < 0) {
+                        client->rect.width, client->rect.height,
+                        client->border_width)) < 0) {
         fprintf(stderr, "asprintf failed\n");
         /* not sure what to return here, will figure it out later */
         return SCM_UNSPECIFIED;
