@@ -83,6 +83,30 @@ static SCM scm_map_client(SCM client_smob)
     return SCM_UNSPECIFIED;
 }
 
+static SCM scm_client_x(SCM client_smob)
+{
+    client_t *client = (client_t *)SCM_SMOB_DATA(client_smob);
+    return scm_from_signed_integer(client->rect.x);
+}
+
+static SCM scm_client_y(SCM client_smob)
+{
+    client_t *client = (client_t *)SCM_SMOB_DATA(client_smob);
+    return scm_from_signed_integer(client->rect.y);
+}
+
+static SCM scm_client_width(SCM client_smob)
+{
+    client_t *client = (client_t *)SCM_SMOB_DATA(client_smob);
+    return scm_from_unsigned_integer(client->rect.width);
+}
+
+static SCM scm_client_height(SCM client_smob)
+{
+    client_t *client = (client_t *)SCM_SMOB_DATA(client_smob);
+    return scm_from_unsigned_integer(client->rect.height);
+}
+
 static SCM scm_nwm_stop(void)
 {
     wm_conf.stop = true;
@@ -159,6 +183,10 @@ void *init_scheme(void *data)
     scm_c_define_gsubr("resize-client", 3, 0, 0, &scm_resize_client);
     scm_c_define_gsubr("map-client", 1, 0, 0, &scm_map_client);
     scm_c_define_gsubr("dump-client", 1, 0, 0, &scm_dump_client);
+    scm_c_define_gsubr("client-x", 1, 0, 0, &scm_client_x);
+    scm_c_define_gsubr("client-y", 1, 0, 0, &scm_client_y);
+    scm_c_define_gsubr("client-width", 1, 0, 0, &scm_client_width);
+    scm_c_define_gsubr("client-height", 1, 0, 0, &scm_client_height);
 
     init_client_type();
 
