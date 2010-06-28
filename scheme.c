@@ -125,11 +125,14 @@ static SCM scm_dump_client(SCM client_smob)
     client_t *client = (client_t *)SCM_SMOB_DATA(client_smob);
 
     SCM out_port = scm_current_output_port();
-    /* scm_puts("blah blah\n", out_port); */
 
     char *str = NULL;
     int len;
-    if ((len = asprintf(&str, "(%u x %u)\n", client->rect.width, client->rect.height)) < 0) {
+    const char *fmt = "window: %u\nposition: (%d, %d)\nsize: %u x %u\n";
+    if ((len = asprintf(&str, fmt, 
+                        client->window,
+                        client->rect.x, client->rect.y,
+                        client->rect.width, client->rect.height)) < 0) {
         fprintf(stderr, "asprintf failed\n");
         /* not sure what to return here, will figure it out later */
         return SCM_UNSPECIFIED;
