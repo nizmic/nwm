@@ -721,7 +721,7 @@ int main(int argc, char **argv)
             xcb_flush(connection);
         }
         
-        usleep(100000);
+        usleep(50000);
     }
 
     xcb_disconnect(connection);
