@@ -180,6 +180,12 @@ static SCM scm_screen_height(void)
     return scm_from_unsigned_integer(wm_conf.screen->height_in_pixels);
 }
 
+static SCM scm_bind_key(SCM mod_mask, SCM keysym, SCM proc)
+{
+    bind_key(scm_to_uint16(mod_mask), scm_to_uint32(keysym), proc);
+    return SCM_UNSPECIFIED;
+}
+
 void *init_scheme(void *data)
 {
     scm_c_define_gsubr("nwm-stop", 0, 0, 0, &scm_nwm_stop);
@@ -200,6 +206,8 @@ void *init_scheme(void *data)
 
     scm_c_define_gsubr("screen-width", 0, 0, 0, &scm_screen_width);
     scm_c_define_gsubr("screen-height", 0, 0, 0, &scm_screen_height);
+
+    scm_c_define_gsubr("bind-key", 3, 0, 0, &scm_bind_key);
 
     init_client_type();
 

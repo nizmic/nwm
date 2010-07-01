@@ -38,6 +38,7 @@
 nwm_t wm_conf;
 
 GList *client_list = NULL;
+GList *keybinding_list = NULL;
 
 /********** Initialization **********/
 
@@ -55,6 +56,17 @@ client_t *client_init(client_t *client)
 {
     memset(client, 0, sizeof(client_t));
     return client;
+}
+
+keybinding_t *keybinding_alloc(void)
+{
+    return (keybinding_t *)malloc(sizeof(keybinding_t));
+}
+
+keybinding_t *keybinding_init(keybinding_t *binding)
+{
+    memset(binding, 0, sizeof(keybinding_t));
+    return binding;
 }
 
 /********** Error handling **********/
@@ -243,10 +255,22 @@ int handle_key_press_event(void *data, xcb_connection_t *c, xcb_key_press_event_
 
     xcb_keycode_t keycode = event->detail;
     xcb_keysym_t keysym = xcb_key_symbols_get_keysym(wm_conf.key_syms, keycode, 0);
-    fprintf(stderr, "  keycode %u, keysym %ul\n", keycode, keysym);
+    fprintf(stderr, "  keycode %u, keysym %ul, state %u\n", keycode, keysym, event->state);
 
-    fprintf(stderr, "  dumping client list:\n");
-    dump_client_list();
+    fprintf(stderr, "  checking keybinding list\n");
+    SCM key_proc = SCM_UNDEFINED;
+    GList *node = keybinding_list;
+    while (node) {
+        keybinding_t *binding = (keybinding_t *)node->data;
+        if (binding->keysym == keysym && binding->mod_mask == event->state) {
+            fprintf(stderr, "  FOUND MATCH!\n");
+            key_proc = binding->scm_proc;
+        }
+        node = keybinding_list->next;
+    }
+
+    if (key_proc != SCM_UNDEFINED)
+        scm_call_0(key_proc);
 
     return 0;
 }
@@ -569,7 +593,7 @@ void xinerama_test(void)
     }
 }
 
-int bind_key(xcb_key_but_mask_t mod_mask, xcb_keysym_t keysym)
+int bind_key(xcb_key_but_mask_t mod_mask, xcb_keysym_t keysym, SCM proc)
 {
     xcb_grab_server(wm_conf.connection);
     xcb_keycode_t *keycode_array = xcb_key_symbols_get_keycode(wm_conf.key_syms,
@@ -583,6 +607,11 @@ int bind_key(xcb_key_but_mask_t mod_mask, xcb_keysym_t keysym)
                          XCB_GRAB_MODE_ASYNC, XCB_GRAB_MODE_ASYNC);
         }
         free(keycode_array);
+        keybinding_t *binding = keybinding_init(keybinding_alloc());
+        binding->keysym = keysym;
+        binding->mod_mask = mod_mask;
+        binding->scm_proc = proc;
+        keybinding_list = g_list_append(keybinding_list, binding);
     }
     xcb_ungrab_server(wm_conf.connection);
     xcb_flush(wm_conf.connection);
@@ -653,7 +682,6 @@ int main(int argc, char **argv)
     xcb_change_window_attributes(connection, root_window, XCB_CW_EVENT_MASK, &root_win_event_mask);
 
     /* successfully grab semicolon key! */
-    /*xcb_keycode_t *keycode_array = xcb_key_symbols_get_keycode(wm_conf.key_syms, XK_Return);*/
     xcb_keycode_t *keycode_array = xcb_key_symbols_get_keycode(wm_conf.key_syms, 
                                                                XK_semicolon);
     xcb_keycode_t keycode;
@@ -661,7 +689,7 @@ int main(int argc, char **argv)
     if (keycode_array) {
         while ((keycode = keycode_array[i++]) != XCB_NO_SYMBOL) {
             xcb_grab_key(connection, 1, root_window, /*XCB_BUTTON_MASK_ANY*/
-                         XCB_KEY_BUT_MASK_MOD_3, keycode,
+                         XCB_KEY_BUT_MASK_MOD_4, keycode,
                          XCB_GRAB_MODE_ASYNC, XCB_GRAB_MODE_ASYNC);
         }
         free(keycode_array);
@@ -673,6 +701,10 @@ int main(int argc, char **argv)
     fprintf(stderr, "entering event loop\n");
 
     /* event loop */
+
+    /* This thing needs to be reworked.  It simply pauses for 1/10 of a second each time 
+     * through the loop.  The sleep time should be based on how long the iteration took.
+     */
 
     repl_server_t *server = repl_server_init();
 

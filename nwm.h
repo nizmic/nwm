@@ -27,6 +27,7 @@
 #include <xcb/xcb_keysyms.h>
 #include <xcb/xinerama.h>
 #include <glib.h>
+#include <libguile.h>
 
 typedef struct {
     xcb_connection_t *connection;
@@ -55,7 +56,16 @@ typedef struct {
 
 extern GList *client_list;
 
+typedef struct {
+    xcb_keysym_t keysym;
+    xcb_key_but_mask_t mod_mask;
+    SCM scm_proc;
+} keybinding_t;
+
+extern GList *keybinding_list;
+
 void update_client_geometry(client_t *);
 void map_client(client_t *);
+int bind_key(xcb_key_but_mask_t, xcb_keysym_t, SCM);
 
 #endif
