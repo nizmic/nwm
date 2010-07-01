@@ -569,6 +569,26 @@ void xinerama_test(void)
     }
 }
 
+int bind_key(xcb_key_but_mask_t mod_mask, xcb_keysym_t keysym)
+{
+    xcb_grab_server(wm_conf.connection);
+    xcb_keycode_t *keycode_array = xcb_key_symbols_get_keycode(wm_conf.key_syms,
+                                                               keysym);
+    xcb_keycode_t keycode;
+    int i = 0;
+    if (keycode_array) {
+        while ((keycode = keycode_array[i++]) != XCB_NO_SYMBOL) {
+            xcb_grab_key(wm_conf.connection, 1, wm_conf.screen->root,
+                         mod_mask, keycode,
+                         XCB_GRAB_MODE_ASYNC, XCB_GRAB_MODE_ASYNC);
+        }
+        free(keycode_array);
+    }
+    xcb_ungrab_server(wm_conf.connection);
+    xcb_flush(wm_conf.connection);
+    return 1;
+}
+
 int main(int argc, char **argv)
 {
     xcb_connection_t *connection = xcb_connect(NULL, &wm_conf.default_screen_num);
