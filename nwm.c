@@ -266,7 +266,7 @@ int handle_key_press_event(void *data, xcb_connection_t *c, xcb_key_press_event_
             fprintf(stderr, "  FOUND MATCH!\n");
             key_proc = binding->scm_proc;
         }
-        node = keybinding_list->next;
+        node = node->next;
     }
 
     if (key_proc != SCM_UNDEFINED)
