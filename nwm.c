@@ -713,9 +713,8 @@ int main(int argc, char **argv)
 
         repl_server_step(server);
 
-        event = xcb_poll_for_event(connection);
-
-        if (event) {
+        /* Handle all pending events */
+        while ((event = xcb_poll_for_event(connection))) {
             xcb_event_handle(event_handlers, event);
             free(event);
             xcb_flush(connection);
