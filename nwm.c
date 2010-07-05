@@ -682,18 +682,18 @@ int main(int argc, char **argv)
     xcb_change_window_attributes(connection, root_window, XCB_CW_EVENT_MASK, &root_win_event_mask);
 
     /* successfully grab semicolon key! */
-    xcb_keycode_t *keycode_array = xcb_key_symbols_get_keycode(wm_conf.key_syms, 
-                                                               XK_semicolon);
-    xcb_keycode_t keycode;
-    int i = 0;
-    if (keycode_array) {
-        while ((keycode = keycode_array[i++]) != XCB_NO_SYMBOL) {
-            xcb_grab_key(connection, 1, root_window, /*XCB_BUTTON_MASK_ANY*/
-                         XCB_KEY_BUT_MASK_MOD_4, keycode,
-                         XCB_GRAB_MODE_ASYNC, XCB_GRAB_MODE_ASYNC);
-        }
-        free(keycode_array);
-    }
+    /* xcb_keycode_t *keycode_array = xcb_key_symbols_get_keycode(wm_conf.key_syms,  */
+    /*                                                            XK_semicolon); */
+    /* xcb_keycode_t keycode; */
+    /* int i = 0; */
+    /* if (keycode_array) { */
+    /*     while ((keycode = keycode_array[i++]) != XCB_NO_SYMBOL) { */
+    /*         xcb_grab_key(connection, 1, root_window, /\*XCB_BUTTON_MASK_ANY*\/ */
+    /*                      XCB_KEY_BUT_MASK_MOD_4, keycode, */
+    /*                      XCB_GRAB_MODE_ASYNC, XCB_GRAB_MODE_ASYNC); */
+    /*     } */
+    /*     free(keycode_array); */
+    /* } */
 
     xcb_ungrab_server(connection);
     xcb_flush(connection);
