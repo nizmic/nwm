@@ -186,6 +186,12 @@ static SCM scm_bind_key(SCM mod_mask, SCM keysym, SCM proc)
     return SCM_UNSPECIFIED;
 }
 
+static SCM scm_border_test(void)
+{
+    border_test();
+    return SCM_UNSPECIFIED;
+}
+
 void *init_scheme(void *data)
 {
     scm_c_define_gsubr("nwm-stop", 0, 0, 0, &scm_nwm_stop);
@@ -208,6 +214,8 @@ void *init_scheme(void *data)
     scm_c_define_gsubr("screen-height", 0, 0, 0, &scm_screen_height);
 
     scm_c_define_gsubr("bind-key", 3, 0, 0, &scm_bind_key);
+
+    scm_c_define_gsubr("border-test", 0, 0, 0, &scm_border_test);
 
     init_client_type();
 

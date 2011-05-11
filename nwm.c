@@ -302,6 +302,31 @@ void map_client(client_t *client)
     xcb_flush(wm_conf.connection);
 }
 
+/* Used only by the scheme procs right now */
+void border_test(void)
+{
+    /* Draw borders of all clients on root window */
+    GList *node = client_list;
+    while (node) {
+        client_t *client = (client_t *)node->data;
+        xcb_drawable_t window = wm_conf.screen->root;
+        xcb_gcontext_t white = xcb_generate_id(wm_conf.connection);
+        uint32_t mask = XCB_GC_FOREGROUND;
+        uint32_t value[] = { wm_conf.screen->white_pixel };
+
+        xcb_create_gc(wm_conf.connection, white, window, mask, value);
+        xcb_rectangle_t rect[] = {{ client->rect.x - 2, client->rect.y - 2, client->rect.width + 4, client->rect.height + 4 }};
+        xcb_poly_rectangle(wm_conf.connection, window, white, 1, rect);
+        xcb_free_gc(wm_conf.connection, white);
+
+        node = node->next;
+    }
+
+    /* Map root window */
+    xcb_map_window(wm_conf.connection, wm_conf.screen->root);
+    xcb_flush(wm_conf.connection);
+}
+
 /* Use the geometry data from client structure to configure the X window */
 void update_client_geometry(client_t *client)
 {
