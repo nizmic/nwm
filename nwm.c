@@ -307,10 +307,7 @@ void border_test(void)
 {
     /* Draw borders of all clients on root window */
     GList *node = client_list;
-    xcb_clear_area(wm_conf.connection, 0, wm_conf.screen->root,
-                   0, 0,
-                   wm_conf.screen->width_in_pixels,
-                   wm_conf.screen->height_in_pixels);
+    xcb_aux_clear_window(wm_conf.connection, wm_conf.screen->root);
     while (node) {
         client_t *client = (client_t *)node->data;
         xcb_drawable_t window = wm_conf.screen->root;
