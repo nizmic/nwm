@@ -307,12 +307,17 @@ void border_test(void)
 {
     /* Draw borders of all clients on root window */
     GList *node = client_list;
+    xcb_clear_area(wm_conf.connection, 0, wm_conf.screen->root,
+                   0, 0,
+                   wm_conf.screen->width_in_pixels,
+                   wm_conf.screen->height_in_pixels);
     while (node) {
         client_t *client = (client_t *)node->data;
         xcb_drawable_t window = wm_conf.screen->root;
         xcb_gcontext_t white = xcb_generate_id(wm_conf.connection);
         uint32_t mask = XCB_GC_FOREGROUND;
-        uint32_t value[] = { wm_conf.screen->white_pixel };
+        /*uint32_t value[] = { wm_conf.screen->white_pixel };*/
+        uint32_t value[] = { 0xffff0000 };
 
         xcb_create_gc(wm_conf.connection, white, window, mask, value);
         xcb_rectangle_t rect[] = {{ client->rect.x - 2, client->rect.y - 2, client->rect.width + 4, client->rect.height + 4 }};
