@@ -192,6 +192,13 @@ static SCM scm_border_test(void)
     return SCM_UNSPECIFIED;
 }
 
+static SCM scm_nwm_log(SCM msg)
+{
+    char *c_msg = scm_to_locale_string(msg);
+    fprintf(stderr, "%s\n", c_msg);
+    return SCM_UNSPECIFIED;
+}
+
 void *init_scheme(void *data)
 {
     scm_c_define_gsubr("nwm-stop", 0, 0, 0, &scm_nwm_stop);
@@ -216,6 +223,8 @@ void *init_scheme(void *data)
     scm_c_define_gsubr("bind-key", 3, 0, 0, &scm_bind_key);
 
     scm_c_define_gsubr("border-test", 0, 0, 0, &scm_border_test);
+
+    scm_c_define_gsubr("log", 1, 0, 0, &scm_nwm_log);
 
     init_client_type();
 

@@ -488,10 +488,13 @@ int handle_client_message_event(void *data, xcb_connection_t *c, xcb_client_mess
     return 0;
 }
 
+/* Mapping notify event is sent to all windows and has to do with keyboard mapping, not
+ * window mapping.
+ * See http://tronche.com/gui/x/xlib/events/window-state-change/mapping.html
+ */
 int handle_mapping_notify_event(void *data, xcb_connection_t *c, xcb_mapping_notify_event_t *event)
 {
     print_x_event((xcb_generic_event_t *)event);
-    fprintf(stderr, "  returning 0\n");
     return 0;
 }
 
