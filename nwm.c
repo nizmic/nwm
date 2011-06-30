@@ -255,7 +255,7 @@ int handle_key_press_event(void *data, xcb_connection_t *c, xcb_key_press_event_
 
     xcb_keycode_t keycode = event->detail;
     xcb_keysym_t keysym = xcb_key_symbols_get_keysym(wm_conf.key_syms, keycode, 0);
-    fprintf(stderr, "  keycode %u, keysym %ul, state %u\n", keycode, keysym, event->state);
+    fprintf(stderr, "  keycode %u, keysym %u, state %u\n", keycode, keysym, event->state);
 
     fprintf(stderr, "  checking keybinding list\n");
     SCM key_proc = SCM_UNDEFINED;
