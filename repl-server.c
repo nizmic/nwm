@@ -94,7 +94,7 @@ int repl_conn_read(repl_conn_t *conn)
     ssize_t nread;
     size_t read_buf_avail = io_buffer_available(&conn->read_buf);
     int retval;
-    fprintf(stderr, "buffer has %d bytes available\n", read_buf_avail);
+    fprintf(stderr, "buffer has %ld bytes available\n", read_buf_avail);
 
     if (read_buf_avail > 0) {
         nread = read(conn->sockfd, conn->read_buf.end_p, read_buf_avail);
@@ -108,10 +108,10 @@ int repl_conn_read(repl_conn_t *conn)
                     "connection list\n", conn->sockfd);
         }
         else {
-            fprintf(stderr, "%d bytes read\n", nread);
+            fprintf(stderr, "%ld bytes read\n", nread);
             conn->read_buf.end_p += nread;
             read_buf_avail = io_buffer_available(&conn->read_buf);
-            fprintf(stderr, "buffer has %d bytes available after read\n", read_buf_avail);
+            fprintf(stderr, "buffer has %ld bytes available after read\n", read_buf_avail);
         }
     }
     else {
@@ -127,7 +127,7 @@ int repl_conn_write(repl_conn_t *conn)
 
     size_t len = (conn->write_buf.end_p - conn->write_buf.begin_p);
     if (len > 0) {
-        fprintf(stderr, "    %d bytes\n", len);
+        fprintf(stderr, "    %ld bytes\n", len);
         /* should be checking this return value and acting accordingly */
         write(conn->sockfd, conn->write_buf.begin_p, len);
 
@@ -217,7 +217,7 @@ void repl_conn_eval_lisp(repl_conn_t *conn)
     SCM write_scm = scm_c_eval_string("write");
  
     size_t lisp_len = (conn->read_buf.end_p - conn->read_buf.begin_p);
-    fprintf(stderr, "repl_conn_eval_lisp:\n    lisp_len = %d\n", lisp_len);
+    fprintf(stderr, "repl_conn_eval_lisp:\n    lisp_len = %ld\n", lisp_len);
     char *lisp = malloc(lisp_len + 1);
     memcpy(lisp, conn->read_buf.begin_p, lisp_len);
     lisp[lisp_len] = 0;
