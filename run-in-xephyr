@@ -3,7 +3,7 @@
 # -keybd part was necessary to resolve RALT issue
 Xephyr -keybd ephyr,,xkbmodel=evdev -screen 600x400 :1 &
 
-sleep 2
+sleep 5
 export DISPLAY=:1.0
 ./nwm &
 setxkbmap dvorak -display :1.0

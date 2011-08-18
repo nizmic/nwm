@@ -188,6 +188,9 @@ int handle_destroy_notify_event(void *data, xcb_connection_t *c, xcb_destroy_not
         fprintf(stderr, "  removing client window %u\n", client->window);
         client_list = g_list_remove(client_list, client);
         free(client);
+
+        /* rearrange the windows */
+        arrange();
     }
     else {
         fprintf(stderr, "  client window %u _not_ found!\n", event->window);
@@ -375,21 +378,35 @@ void read_client_geometry(client_t *client)
     }
 }
 
+/* Assume 1 master window for now */
 void arrange(void)
 {
     guint clients_len = g_list_length(client_list);
     fprintf(stderr, "arranging %u windows\n", clients_len);
-    int i = 1;
     uint16_t screen_width = wm_conf.screen->width_in_pixels;
     uint16_t screen_height = wm_conf.screen->height_in_pixels;
+
+    guint master_count = 1;
+
     GList *node = client_list;
+    int i = 0;
     while (i < clients_len) {
         client_t *client = node->data;
-        client->rect.x = i * (screen_width / clients_len);
-        client->rect.y = 0;
-        client->rect.width = (screen_width / clients_len);
-        client->rect.height = screen_height;
-        client->border_width = 0;
+
+        if (i < master_count) {
+            client->rect.x = 0;
+            client->rect.y = screen_height / master_count * i;
+            client->rect.width = screen_width / 2;
+            client->rect.height = screen_height / master_count * (i + 1);
+            client->border_width = 0;
+        }
+        else {
+            client->rect.x = screen_width / 2;
+            client->rect.y = screen_height / (clients_len - master_count) * (i - master_count);
+            client->rect.width = screen_width / 2;
+            client->rect.height = screen_height / (clients_len - master_count) * (i - master_count + 1);
+            client->border_width = 0;
+        }
 
         update_client_geometry(client);
 
@@ -413,7 +430,8 @@ client_t *manage_window(xcb_window_t window)
 
     xcb_map_window(wm_conf.connection, client->window);
 
-    /* arrange(); */
+    /* This is a potential place to tile the windows */
+    arrange();
 
     return client;    
 }
