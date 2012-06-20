@@ -282,6 +282,7 @@ static void repl_server_socket_init(repl_server_t *server)
 repl_server_t *repl_server_init(void)
 {
     repl_server_t *server = (repl_server_t *)malloc(sizeof(repl_server_t));
+    memset(server, 0, sizeof(repl_server_t));
     repl_server_socket_init(server);
     scm_with_guile(&init_scheme, NULL);
     return server;

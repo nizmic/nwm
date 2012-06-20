@@ -25,13 +25,13 @@ LIBS = `pkg-config --libs xcb xcb-aux xcb-event xcb-keysyms xcb-xinerama glib-2.
 build: nwm nwm-repl
 
 clean:
-	rm -f nwm nwm-repl nwm.o nwm-repl.o repl-server.o scheme.o
+	rm -f nwm nwm-repl nwm.o nwm-repl.o repl-server.o scheme.o event.o
 
-nwm: nwm.o repl-server.o scheme.o
-	gcc nwm.o repl-server.o scheme.o -o $@ $(LIBS)
+nwm: nwm.o repl-server.o scheme.o event.o
+	gcc nwm.o repl-server.o scheme.o event.o -o $@ $(LIBS)
 
-nwm.o repl-server.o scheme.o: nwm.c repl-server.c nwm.h repl-server.h scheme.h scheme.c
-	gcc -c nwm.c repl-server.c scheme.c $(CFLAGS)
+nwm.o repl-server.o scheme.o event.o: nwm.c repl-server.c nwm.h repl-server.h scheme.h scheme.c event.c
+	gcc -c nwm.c repl-server.c scheme.c event.c $(CFLAGS)
 
 nwm-repl: nwm-repl.o
 	gcc $< -o $@ $(LIBS)

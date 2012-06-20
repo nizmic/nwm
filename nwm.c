@@ -522,33 +522,33 @@ int handle_reparent_notify_event(void *data, xcb_connection_t *c, xcb_reparent_n
     return 0;
 }
 
-/* void set_event_handlers(xcb_event_handlers_t *handlers) */
-/* { */
-/*     xcb_event_set_button_press_handler(handlers, handle_button_press_event, NULL); */
-/*     xcb_event_set_button_release_handler(handlers, handle_button_release_event, NULL); */
-/*     xcb_event_set_configure_request_handler(handlers, handle_configure_request_event, NULL); */
-/*     xcb_event_set_configure_notify_handler(handlers, handle_configure_notify_event, NULL); */
-/*     xcb_event_set_destroy_notify_handler(handlers, handle_destroy_notify_event, NULL); */
-/*     xcb_event_set_enter_notify_handler(handlers, handle_enter_notify_event, NULL); */
-/*     xcb_event_set_leave_notify_handler(handlers, handle_leave_notify_event, NULL); */
-/*     xcb_event_set_focus_in_handler(handlers, handle_focus_in_event, NULL); */
-/*     xcb_event_set_motion_notify_handler(handlers, handle_motion_notify_event, NULL); */
-/*     xcb_event_set_expose_handler(handlers, handle_expose_event, NULL); */
-/*     xcb_event_set_key_press_handler(handlers, handle_key_press_event, NULL); */
-/*     xcb_event_set_key_release_handler(handlers, handle_key_release_event, NULL); */
-/*     xcb_event_set_map_request_handler(handlers, handle_map_request_event, NULL); */
-/*     xcb_event_set_unmap_notify_handler(handlers, handle_unmap_notify_event, NULL); */
-/*     xcb_event_set_client_message_handler(handlers, handle_client_message_event, NULL); */
-/*     xcb_event_set_mapping_notify_handler(handlers, handle_mapping_notify_event, NULL); */
-/*     xcb_event_set_reparent_notify_handler(handlers, handle_reparent_notify_event, NULL); */
-/* } */
+void set_event_handlers(xcb_event_handlers_t *handlers)
+{
+    xcb_event_set_button_press_handler(handlers, handle_button_press_event, NULL);
+    xcb_event_set_button_release_handler(handlers, handle_button_release_event, NULL);
+    xcb_event_set_configure_request_handler(handlers, handle_configure_request_event, NULL);
+    xcb_event_set_configure_notify_handler(handlers, handle_configure_notify_event, NULL);
+    xcb_event_set_destroy_notify_handler(handlers, handle_destroy_notify_event, NULL);
+    xcb_event_set_enter_notify_handler(handlers, handle_enter_notify_event, NULL);
+    xcb_event_set_leave_notify_handler(handlers, handle_leave_notify_event, NULL);
+    xcb_event_set_focus_in_handler(handlers, handle_focus_in_event, NULL);
+    xcb_event_set_motion_notify_handler(handlers, handle_motion_notify_event, NULL);
+    xcb_event_set_expose_handler(handlers, handle_expose_event, NULL);
+    xcb_event_set_key_press_handler(handlers, handle_key_press_event, NULL);
+    xcb_event_set_key_release_handler(handlers, handle_key_release_event, NULL);
+    xcb_event_set_map_request_handler(handlers, handle_map_request_event, NULL);
+    xcb_event_set_unmap_notify_handler(handlers, handle_unmap_notify_event, NULL);
+    xcb_event_set_client_message_handler(handlers, handle_client_message_event, NULL);
+    xcb_event_set_mapping_notify_handler(handlers, handle_mapping_notify_event, NULL);
+    xcb_event_set_reparent_notify_handler(handlers, handle_reparent_notify_event, NULL);
+}
 
-/* void set_exclusive_error_handler(xcb_event_handlers_t *handlers, xcb_generic_error_handler_t handler) */
-/* { */
-/*     int i; */
-/*     for (i = 0; i < 256; ++i) */
-/*         xcb_event_set_error_handler(handlers, i, handler, NULL); */
-/* } */
+void set_exclusive_error_handler(xcb_event_handlers_t *handlers, xcb_generic_error_handler_t handler)
+{
+    int i;
+    for (i = 0; i < 256; ++i)
+        xcb_event_set_error_handler(handlers, i, handler, NULL);
+}
 
 
 
@@ -689,10 +689,9 @@ int main(int argc, char **argv)
     xcb_grab_server(connection);
     xcb_flush(connection);
 
-    /* xcb_event_handlers_t *event_handlers = &wm_conf.event_handlers; */
-    /* xcb_event_handlers_init(connection, event_handlers); */
-    /* set_exclusive_error_handler(event_handlers, handle_startup_error); */
-
+    xcb_event_handlers_t *event_handlers = &wm_conf.event_handlers;
+    xcb_event_handlers_init(connection, event_handlers);
+    set_exclusive_error_handler(event_handlers, handle_startup_error);
     /* Try to get substructure redirect events from root window.
      * This will cause an error if a window manager is already running.
      */
@@ -706,14 +705,14 @@ int main(int argc, char **argv)
     xcb_aux_sync(connection);
 
     /* Process all errors in the queue if any */
-    /* xcb_event_poll_for_event_loop(event_handlers); */
+    xcb_event_poll_for_event_loop(event_handlers);
 
     scan_windows();
 
     xinerama_test();
 
-    /* set_exclusive_error_handler(event_handlers, handle_error); */
-    /* set_event_handlers(event_handlers); */
+    set_exclusive_error_handler(event_handlers, handle_error);
+    set_event_handlers(event_handlers);
 
     /* Allocate the key symbols */
     wm_conf.key_syms = xcb_key_symbols_alloc(connection);
@@ -764,8 +763,7 @@ int main(int argc, char **argv)
 
         /* Handle all pending events */
         while ((event = xcb_poll_for_event(connection))) {
-            /* xcb_event_handle(event_handlers, event); */
-            fprintf(stderr, "TODO: handle event\n");
+            xcb_event_handle(event_handlers, event);
             free(event);
             xcb_flush(connection);
         }

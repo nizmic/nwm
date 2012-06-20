@@ -29,9 +29,11 @@
 #include <glib.h>
 #include <libguile.h>
 
+#include "event.h"
+
 typedef struct {
     xcb_connection_t *connection;
-    /* xcb_event_handlers_t event_handlers; */
+    xcb_event_handlers_t event_handlers;
     int default_screen_num;
     xcb_screen_t *screen;
     xcb_key_symbols_t *key_syms;
