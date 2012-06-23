@@ -37,7 +37,13 @@ int main(int argc, char **argv)
     sockfd = socket(AF_LOCAL, SOCK_STREAM, 0);
     bzero(&remote, sizeof(remote));
     remote.sun_family = AF_LOCAL;
-    strcpy(remote.sun_path, "/home/nizmic/sock");
+
+    char *home_path = getenv("HOME");
+    char *sock_path = (char *)malloc((strlen(home_path) + 9) * sizeof(char));
+    strcpy(sock_path, home_path);
+    strcat(sock_path, "/.nwm/sock");
+    strcpy(remote.sun_path, sock_path);
+    free(sock_path);
 
     fprintf(stderr, "connecting to %s\n", remote.sun_path);
     if (connect(sockfd, (struct sockaddr *)&remote, sizeof(remote)) < 0) {

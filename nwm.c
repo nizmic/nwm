@@ -19,6 +19,8 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 #include <unistd.h>
 #include <string.h>
 #include <stdbool.h>
@@ -666,6 +668,34 @@ int bind_key(xcb_key_but_mask_t mod_mask, xcb_keysym_t keysym, SCM proc)
     return 1;
 }
 
+void init_conf_dir(void)
+{
+    char *home_path = getenv("HOME");
+    if (!home_path) {
+        fprintf(stderr, "HOME is not set. Not initializing config directory.\n");
+        return;
+    }
+    char *conf_dir_path = (char *)malloc((strlen(home_path) + strlen(CONF_DIR) + 2) * sizeof(char));
+    strcpy(conf_dir_path, home_path);
+    strcat(conf_dir_path, "/");
+    strcat(conf_dir_path, CONF_DIR);
+    struct stat st;
+    int stat_res = stat(conf_dir_path, &st);
+    if (stat_res < 0) {
+        if (errno == EACCES) {
+            fprintf(stderr, "config directory '%s' is not accessible.\n", conf_dir_path);
+        }
+        else {
+            /* Assume directory doesn't exist yet.  Try to create it. */
+            fprintf(stderr, "creating config directory '%s'.\n", conf_dir_path);
+            if (mkdir(conf_dir_path, 0700)) {
+                fprintf(stderr, "failed to create config directory.\n");
+            }
+        }
+    }
+    wm_conf.conf_dir_path = conf_dir_path;
+}
+
 int main(int argc, char **argv)
 {
     xcb_connection_t *connection = xcb_connect(NULL, &wm_conf.default_screen_num);
@@ -675,6 +705,7 @@ int main(int argc, char **argv)
     }
 
     init_wm_conf();
+    init_conf_dir();
     wm_conf.connection = connection;
 
     const xcb_setup_t *setup = xcb_get_setup(connection);

@@ -259,10 +259,14 @@ static void repl_server_socket_init(repl_server_t *server)
         perror("socket creation failed");
         exit(1);
     }
-    unlink(SOCKPATH); /* ok if it fails, just making sure it doesn't already exist */
+    char *sock_path = (char *)malloc((strlen(wm_conf.conf_dir_path) + 6) * sizeof(char));
+    strcpy(sock_path, wm_conf.conf_dir_path);
+    strcat(sock_path, "/sock");
+    unlink(sock_path); /* ok if it fails, just making sure it doesn't already exist */
     bzero(&server->addr, sizeof(server->addr));
     server->addr.sun_family = AF_LOCAL;
-    strncpy(server->addr.sun_path, SOCKPATH, sizeof(server->addr.sun_path) - 1);
+    strncpy(server->addr.sun_path, sock_path, sizeof(server->addr.sun_path) - 1);
+    free(sock_path);
     fprintf(stderr, "binding socket to %s\n", server->addr.sun_path);
     if (bind(server->sockfd, (struct sockaddr *)&server->addr, SUN_LEN(&server->addr)) < 0) {
         perror("bind failed");

@@ -31,6 +31,9 @@
 
 #include "event.h"
 
+/* Configuration data directory, relative to $HOME */
+#define CONF_DIR ".nwm"
+
 typedef struct {
     xcb_connection_t *connection;
     xcb_event_handlers_t event_handlers;
@@ -39,6 +42,7 @@ typedef struct {
     xcb_key_symbols_t *key_syms;
     bool xinerama_is_active;
     bool stop;
+    char *conf_dir_path;
 } nwm_t;
 
 extern nwm_t wm_conf;

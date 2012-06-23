@@ -24,7 +24,6 @@
 #include <sys/socket.h>
 #include <sys/un.h>
 
-#define SOCKPATH "/home/nizmic/sock"
 #define BUFSIZE 4096
 
 typedef struct {
