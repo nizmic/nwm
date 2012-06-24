@@ -239,6 +239,21 @@ void repl_conn_eval_lisp(repl_conn_t *conn)
     free(lisp);
 }
 
+void load_init_scheme(void)
+{
+    char *init_file_path = (char *)malloc((strlen(wm_conf.conf_dir_path) + 10) * sizeof(char));
+    strcpy(init_file_path, wm_conf.conf_dir_path);
+    strcat(init_file_path, "/init.scm");
+    char *load_expr = (char *)malloc((strlen(init_file_path) + 10) * sizeof(char));
+    sprintf(load_expr, "(load \"%s\")", init_file_path);
+    scm_c_catch(SCM_BOOL_T,
+                eval_lisp, load_expr,
+                handle_lisp_error, NULL,
+                NULL, NULL);
+    free(init_file_path);
+    free(load_expr);
+}
+
 static void repl_server_socket_init(repl_server_t *server)
 {
     fprintf(stderr, "creating socket\n");

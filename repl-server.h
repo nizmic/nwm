@@ -52,5 +52,6 @@ SGLIB_DEFINE_LIST_PROTOTYPES(repl_conn_t, COMPARE_REPL_CONN, next)
 repl_server_t *repl_server_init(void);
 void repl_server_step(repl_server_t *server);
 void init_io_buffer_ports(void);
+void load_init_scheme(void);
 
 #endif

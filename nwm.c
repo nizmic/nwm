@@ -782,6 +782,7 @@ int main(int argc, char **argv)
      */
 
     repl_server_t *server = repl_server_init();
+    load_init_scheme();
 
     xcb_generic_event_t *event;
     while (!wm_conf.stop) {
