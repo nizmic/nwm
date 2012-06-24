@@ -1,5 +1,5 @@
 /* nwm - a programmable window manager
- * Copyright (C) 2010  Nathan Sullivan
+ * Copyright (C) 2010-2012  Nathan Sullivan
  *
  * This program is free software; you can redistribute it and/or 
  * modify it under the terms of the GNU General Public License 
@@ -30,19 +30,7 @@
 #include "repl-server.h"
 #include "scheme.h"
 
-typedef struct {
-    char buf[BUFSIZE];
-    char *begin_p;
-    char *end_p;
-} io_buffer_t;
-
-typedef struct {
-    int sockfd;
-    struct sockaddr_un addr;
-    io_buffer_t read_buf;
-    io_buffer_t write_buf;
-    SCM port;
-} repl_conn_t;
+SGLIB_DEFINE_LIST_FUNCTIONS(repl_conn_t, COMPARE_REPL_CONN, next)
 
 void io_buffer_reset(io_buffer_t *buf)
 {
@@ -155,11 +143,11 @@ static scm_t_bits io_buffer_port_tag;
 static SCM io_buffer_to_port(io_buffer_t *buf)
 {
     SCM port;
-    scm_t_port *pt;
+    /*scm_t_port *pt;*/
 
     port = scm_new_port_table_entry(io_buffer_port_tag);
     SCM_SET_CELL_TYPE(port, io_buffer_port_tag | SCM_OPN | SCM_WRTNG);
-    pt = SCM_PTAB_ENTRY(port);
+    /*pt = SCM_PTAB_ENTRY(port);*/
     SCM_SETSTREAM(port, buf);
 
     return port;
@@ -307,7 +295,7 @@ static void repl_server_accept_conn(repl_server_t *server)
         conn->sockfd = sockfd;
         memcpy(&conn->addr, &addr, sizeof(struct sockaddr_un));
         conn->port = io_buffer_to_port(&conn->write_buf);
-        server->conn_list = g_list_append(server->conn_list, conn);
+        sglib_repl_conn_t_add(&server->conn_list, conn);
     }
 }
 
@@ -328,14 +316,13 @@ void repl_server_step(repl_server_t *server)
 
     /* monitor all client connections for read/write availability */
     maxfd = server->sockfd;
-    GList *node = server->conn_list;
-    while (node) {
-        repl_conn_t *conn = (repl_conn_t *)node->data;
+    repl_conn_t *conn = server->conn_list;
+    while (conn) {
         FD_SET(conn->sockfd, &rset);
         FD_SET(conn->sockfd, &wset);
         if (conn->sockfd > maxfd)
             maxfd = conn->sockfd;
-        node = node->next;
+        conn = conn->next;
     }
 
     val = select(maxfd + 1, &rset, &wset, NULL, &timeout);
@@ -348,17 +335,16 @@ void repl_server_step(repl_server_t *server)
         repl_server_accept_conn(server);
 
     /* Process any client connections that are available for read/write */
-    node = server->conn_list;
-    GList *delete_list = NULL;
-    while (node) {
-        repl_conn_t *conn = (repl_conn_t *)node->data;
+    conn = server->conn_list;
+    repl_conn_t *delete_list = NULL;
+    while (conn) {
         ssize_t n = 0;
         if (FD_ISSET(conn->sockfd, &rset)) {
             fprintf(stderr, "read available for socket %d\n", 
                     conn->sockfd);
             if ((n = repl_conn_read(conn)) == 0) {
                 fprintf(stderr, "removing connection, socket %d\n", conn->sockfd);
-                delete_list = g_list_append(delete_list, conn);
+                sglib_repl_conn_t_add(&delete_list, conn);
             }
             else if (n > 0) {
                 /* we read something - try to evaluate lisp */
@@ -371,15 +357,13 @@ void repl_server_step(repl_server_t *server)
                 repl_conn_write(conn);
             }
         }
-        node = node->next;
+        conn = conn->next;
     }
 
-    node = delete_list;
-    while (node) {
-        repl_conn_t *conn = (repl_conn_t *)node->data;
-        server->conn_list = g_list_remove(server->conn_list, conn);
+    conn = delete_list;
+    while (conn) {
+        sglib_repl_conn_t_delete(&server->conn_list, conn);
         repl_conn_free(conn);
-        node = node->next;
+        conn = conn->next;
     }
-    g_list_free(delete_list);
 }

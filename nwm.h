@@ -1,5 +1,5 @@
 /* nwm - a programmable window manager
- * Copyright (C) 2010  Nathan Sullivan
+ * Copyright (C) 2010-2012  Nathan Sullivan
  *
  * This program is free software; you can redistribute it and/or 
  * modify it under the terms of the GNU General Public License 
@@ -26,15 +26,15 @@
 #include <xcb/xcb_aux.h>
 #include <xcb/xcb_keysyms.h>
 #include <xcb/xinerama.h>
-#include <glib.h>
 #include <libguile.h>
 
 #include "event.h"
+#include "sglib.h"
 
 /* Configuration data directory, relative to $HOME */
 #define CONF_DIR ".nwm"
 
-typedef struct {
+typedef struct nwm {
     xcb_connection_t *connection;
     xcb_event_handlers_t event_handlers;
     int default_screen_num;
@@ -47,28 +47,34 @@ typedef struct {
 
 extern nwm_t wm_conf;
 
-typedef struct {
+typedef struct rect {
     int16_t x;
     int16_t y;
     uint16_t width;
     uint16_t height;
 } rect_t;
 
-typedef struct {
+typedef struct client {
     rect_t rect;
     xcb_window_t window;
     uint16_t border_width;
+    struct client *next;
 } client_t;
 
-extern GList *client_list;
+extern client_t *client_list;
+#define COMPARE_CLIENT(x,y) (x->window - y->window)
+SGLIB_DEFINE_LIST_PROTOTYPES(client_t, COMPARE_CLIENT, next)
 
-typedef struct {
+typedef struct keybinding {
     xcb_keysym_t keysym;
     xcb_key_but_mask_t mod_mask;
     SCM scm_proc;
+    struct keybinding *next;
 } keybinding_t;
 
-extern GList *keybinding_list;
+extern keybinding_t *keybinding_list;
+#define COMPARE_KEYBINDING(x,y) (x->keysym - y->keysym)
+SGLIB_DEFINE_LIST_PROTOTYPES(keybinding_t, COMPARE_KEYBINDING, next)
 
 void update_client_geometry(client_t *);
 void map_client(client_t *);

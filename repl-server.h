@@ -1,5 +1,5 @@
 /* nwm - a programmable window manager
- * Copyright (C) 2010  Nathan Sullivan
+ * Copyright (C) 2010-2012  Nathan Sullivan
  *
  * This program is free software; you can redistribute it and/or 
  * modify it under the terms of the GNU General Public License 
@@ -20,17 +20,34 @@
 #ifndef __REPL_SERVER_H__
 #define __REPL_SERVER_H__
 
-#include <glib.h>
 #include <sys/socket.h>
 #include <sys/un.h>
 
 #define BUFSIZE 4096
 
-typedef struct {
+typedef struct io_buffer {
+    char buf[BUFSIZE];
+    char *begin_p;
+    char *end_p;
+} io_buffer_t;
+
+typedef struct repl_conn {
     int sockfd;
     struct sockaddr_un addr;
-    GList *conn_list;
+    io_buffer_t read_buf;
+    io_buffer_t write_buf;
+    SCM port;
+    struct repl_conn *next;
+} repl_conn_t;
+
+typedef struct repl_server {
+    int sockfd;
+    struct sockaddr_un addr;
+    repl_conn_t *conn_list;
 } repl_server_t;
+
+#define COMPARE_REPL_CONN(x,y) (x->sockfd - y->sockfd)
+SGLIB_DEFINE_LIST_PROTOTYPES(repl_conn_t, COMPARE_REPL_CONN, next)
 
 repl_server_t *repl_server_init(void);
 void repl_server_step(repl_server_t *server);

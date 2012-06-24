@@ -1,5 +1,5 @@
 /* nwm - a programmable window manager
- * Copyright (C) 2010  Nathan Sullivan
+ * Copyright (C) 2010-2012  Nathan Sullivan
  *
  * This program is free software; you can redistribute it and/or 
  * modify it under the terms of the GNU General Public License 
@@ -115,7 +115,7 @@ static SCM scm_nwm_stop(void)
 
 static SCM scm_count_clients(void)
 {
-    guint len = g_list_length(client_list);
+    int len = sglib_client_t_len(client_list);
     return scm_from_unsigned_integer(len);
 }
 
@@ -123,11 +123,11 @@ static SCM scm_all_clients(void)
 {
     SCM clients = SCM_EOL;
     SCM smob;
-    GList *node = client_list;
-    while (node) {
-        SCM_NEWSMOB(smob, client_tag, (client_t *)node->data);
+    client_t *client = client_list;
+    while (client) {
+        SCM_NEWSMOB(smob, client_tag, client);
         clients = scm_append(scm_list_2(clients, scm_list_1(smob)));
-        node = node->next;
+        client = client->next;
     }
     return clients;
 }
@@ -135,7 +135,7 @@ static SCM scm_all_clients(void)
 static SCM scm_first_client(void)
 {
     SCM client;
-    SCM_NEWSMOB(client, client_tag, (client_t *)client_list->data);
+    SCM_NEWSMOB(client, client_tag, client_list);
     return client;
 }
 

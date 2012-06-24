@@ -1,5 +1,5 @@
 /* nwm - a programmable window manager
- * Copyright (C) 2010  Nathan Sullivan
+ * Copyright (C) 2010-2012  Nathan Sullivan
  *
  * This program is free software; you can redistribute it and/or 
  * modify it under the terms of the GNU General Public License 
@@ -39,8 +39,11 @@
 
 nwm_t wm_conf;
 
-GList *client_list = NULL;
-GList *keybinding_list = NULL;
+client_t *client_list = NULL;
+SGLIB_DEFINE_LIST_FUNCTIONS(client_t, COMPARE_CLIENT, next)
+
+keybinding_t *keybinding_list = NULL;
+SGLIB_DEFINE_LIST_FUNCTIONS(keybinding_t, COMPARE_KEYBINDING, next)
 
 /********** Initialization **********/
 
@@ -104,12 +107,11 @@ void print_x_event(xcb_generic_event_t *event)
 
 client_t * find_client(xcb_window_t win)
 {
-    GList *cur_node = client_list;
-    while (cur_node) {
-        client_t *client = (client_t *)cur_node->data;
+    client_t *client = client_list;
+    while (client) {
         if (client->window == win)
             return client;
-        cur_node = cur_node->next;
+        client = client->next;
     }
     return NULL;
 }
@@ -188,7 +190,7 @@ int handle_destroy_notify_event(void *data, xcb_connection_t *c, xcb_destroy_not
     client_t *client = find_client(event->window);
     if (client) {
         fprintf(stderr, "  removing client window %u\n", client->window);
-        client_list = g_list_remove(client_list, client);
+        sglib_client_t_delete(&client_list, client);
         free(client);
 
         /* rearrange the windows */
@@ -232,16 +234,15 @@ int handle_expose_event(void *data, xcb_connection_t *c, xcb_expose_event_t *eve
 
 void dump_client_list(void)
 {
-    GList *cur_node = client_list;
-    while (cur_node) {
-        client_t *client = (client_t *)cur_node->data;
+    client_t *client = client_list;
+    while (client) {
         fprintf(stderr, "   window %u at (%d, %d) size (%d, %d)\n", 
                 client->window,
                 client->rect.x,
                 client->rect.y,
                 client->rect.width,
                 client->rect.height);
-        cur_node = cur_node->next;
+        client = client->next;
     }
 }
 
@@ -264,14 +265,13 @@ int handle_key_press_event(void *data, xcb_connection_t *c, xcb_key_press_event_
 
     fprintf(stderr, "  checking keybinding list\n");
     SCM key_proc = SCM_UNDEFINED;
-    GList *node = keybinding_list;
-    while (node) {
-        keybinding_t *binding = (keybinding_t *)node->data;
+    keybinding_t *binding = keybinding_list;
+    while (binding) {
         if (binding->keysym == keysym && binding->mod_mask == event->state) {
             fprintf(stderr, "  FOUND MATCH!\n");
             key_proc = binding->scm_proc;
         }
-        node = node->next;
+        binding = binding->next;
     }
 
     if (key_proc != SCM_UNDEFINED)
@@ -289,12 +289,11 @@ int handle_key_release_event(void *data, xcb_connection_t *c, xcb_key_release_ev
 /* Necessary?  Maybe just use find_client instead. */
 int already_managing_window(xcb_window_t win)
 {
-    GList *cur_node = client_list;
-    while (cur_node) {
-        client_t *client = (client_t *)cur_node->data;
+    client_t *client = client_list;
+    while (client) {
         if (client->window == win)
             return 1;
-        cur_node = cur_node->next;
+        client = client->next;
     }
     return 0;
 }
@@ -311,10 +310,9 @@ void map_client(client_t *client)
 void border_test(void)
 {
     /* Draw borders of all clients on root window */
-    GList *node = client_list;
+    client_t *client = client_list;
     xcb_aux_clear_window(wm_conf.connection, wm_conf.screen->root);
-    while (node) {
-        client_t *client = (client_t *)node->data;
+    while (client) {
         xcb_drawable_t window = wm_conf.screen->root;
         xcb_gcontext_t white = xcb_generate_id(wm_conf.connection);
         uint32_t mask = XCB_GC_FOREGROUND;
@@ -326,7 +324,7 @@ void border_test(void)
         xcb_poly_rectangle(wm_conf.connection, window, white, 1, rect);
         xcb_free_gc(wm_conf.connection, white);
 
-        node = node->next;
+        client = client->next;
     }
 
     /* Map root window */
@@ -383,18 +381,16 @@ void read_client_geometry(client_t *client)
 /* Assume 1 master window for now */
 void arrange(void)
 {
-    guint clients_len = g_list_length(client_list);
+    int clients_len = sglib_client_t_len(client_list);
     fprintf(stderr, "arranging %u windows\n", clients_len);
     uint16_t screen_width = wm_conf.screen->width_in_pixels;
     uint16_t screen_height = wm_conf.screen->height_in_pixels;
 
-    guint master_count = 1;
+    int master_count = 1;
 
-    GList *node = client_list;
+    client_t *client = client_list;
     int i = 0;
     while (i < clients_len) {
-        client_t *client = node->data;
-
         if (i < master_count) {
             client->rect.x = 0;
             client->rect.y = screen_height / master_count * i;
@@ -413,7 +409,7 @@ void arrange(void)
         update_client_geometry(client);
 
         ++i;
-        node = node->next;
+        client = client->next;
     }
 }
 
@@ -422,7 +418,7 @@ client_t *manage_window(xcb_window_t window)
     fprintf(stderr, "manage window %u\n", window);
     client_t *client = client_init(client_alloc());
     client->window = window;
-    client_list = g_list_append(client_list, client);
+    sglib_client_t_add(&client_list, client);
 
     read_client_geometry(client);
 
@@ -490,7 +486,7 @@ int handle_unmap_notify_event(void *data, xcb_connection_t *c, xcb_unmap_notify_
     client_t *client = find_client(event->window);
     if (client && /*event->event == wm_conf.screen->root &&*/ XCB_EVENT_SENT(event)) {
         fprintf(stderr, "  unmapping window %u\n", client->window);
-        client_list = g_list_remove(client_list, client);
+        sglib_client_t_delete(&client_list, client);
         xcb_unmap_window(wm_conf.connection, client->window);
         xcb_map_window(wm_conf.connection, event->event);
         free(client);
@@ -597,7 +593,7 @@ void scan_windows(void)
             if (!client) {
                 client = client_init(client_alloc());
                 client->window = child_win;
-                client_list = g_list_append(client_list, client);
+                sglib_client_t_add(&client_list, client);
             }
             read_client_geometry(client);
         }
@@ -661,7 +657,7 @@ int bind_key(xcb_key_but_mask_t mod_mask, xcb_keysym_t keysym, SCM proc)
         binding->keysym = keysym;
         binding->mod_mask = mod_mask;
         binding->scm_proc = proc;
-        keybinding_list = g_list_append(keybinding_list, binding);
+        sglib_keybinding_t_add(&keybinding_list, binding);
     }
     xcb_ungrab_server(wm_conf.connection);
     xcb_flush(wm_conf.connection);

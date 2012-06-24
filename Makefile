@@ -1,5 +1,5 @@
 # nwm - a programmable window manager
-# Copyright (C) 2010  Nathan Sullivan
+# Copyright (C) 2010-2012  Nathan Sullivan
 #
 # This program is free software; you can redistribute it and/or 
 # modify it under the terms of the GNU General Public License 
@@ -17,8 +17,8 @@
 # 02110-1301, USA 
 #
 
-CFLAGS = -Wall `pkg-config --cflags xcb xcb-aux xcb-event xcb-keysyms xcb-xinerama glib-2.0` `guile-config compile` -g
-LIBS = `pkg-config --libs xcb xcb-aux xcb-event xcb-keysyms xcb-xinerama glib-2.0` `guile-config link` -lreadline
+CFLAGS = -Wall `pkg-config --cflags xcb xcb-aux xcb-event xcb-keysyms xcb-xinerama` `guile-config compile` -g
+LIBS = `pkg-config --libs xcb xcb-aux xcb-event xcb-keysyms xcb-xinerama` `guile-config link` -lreadline
 
 .PHONY: clean build
 
