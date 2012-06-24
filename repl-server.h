@@ -53,5 +53,6 @@ repl_server_t *repl_server_init(void);
 void repl_server_step(repl_server_t *server);
 void init_io_buffer_ports(void);
 void load_init_scheme(void);
+void run_arrange_hook(void);
 
 #endif

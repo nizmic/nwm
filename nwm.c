@@ -194,7 +194,7 @@ int handle_destroy_notify_event(void *data, xcb_connection_t *c, xcb_destroy_not
         free(client);
 
         /* rearrange the windows */
-        arrange();
+        run_arrange_hook();
     }
     else {
         fprintf(stderr, "  client window %u _not_ found!\n", event->window);
@@ -429,7 +429,7 @@ client_t *manage_window(xcb_window_t window)
     xcb_map_window(wm_conf.connection, client->window);
 
     /* This is a potential place to tile the windows */
-    arrange();
+    run_arrange_hook();
 
     return client;    
 }
@@ -472,7 +472,7 @@ int handle_map_request_event(void *data, xcb_connection_t *c, xcb_map_request_ev
     /* xcb_map_window(c, event->parent); */
     xcb_map_window(c, event->window);
 
-    arrange();
+    run_arrange_hook();
 
     free(win_attrs_reply);
 
