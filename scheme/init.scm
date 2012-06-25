@@ -62,3 +62,20 @@
 	(move-client client x y)
 	(resize-client client width height)
 	(map-client client)))))
+
+(define (add-master)
+  (set! master-count (+ master-count 1))
+  (arrange-hook))
+
+(define (remove-master)
+  (set! master-count (- master-count 1))
+  (arrange-hook))
+
+; run arrange-hook when hit ctrl-spacebar
+(bind-key 4 (string->number "20" 16) arrange-hook)
+
+; add a master, ctrl-;
+(bind-key 4 (string->number "3B" 16) add-master)
+
+; remove a master, ctrl-'
+(bind-key 4 (string->number "27" 16) remove-master)
