@@ -153,10 +153,11 @@ int handle_configure_request_event(void *data, xcb_connection_t *c, xcb_configur
 
     fprintf(stderr, "  totally ignoring requested values! muahaha\n");
     uint16_t config_win_mask = 0;
-    uint32_t config_win_vals[4];
+    uint32_t config_win_vals[5];
 
     config_win_mask |= (XCB_CONFIG_WINDOW_X | XCB_CONFIG_WINDOW_Y | 
-                        XCB_CONFIG_WINDOW_WIDTH | XCB_CONFIG_WINDOW_HEIGHT);
+                        XCB_CONFIG_WINDOW_WIDTH | XCB_CONFIG_WINDOW_HEIGHT |
+                        XCB_CONFIG_WINDOW_BORDER_WIDTH);
 
     fprintf(stderr, "  assigning full-screen size of %u x %u\n", 
             wm_conf.screen->width_in_pixels,
@@ -165,6 +166,7 @@ int handle_configure_request_event(void *data, xcb_connection_t *c, xcb_configur
     config_win_vals[1] = 0;
     config_win_vals[2] = wm_conf.screen->width_in_pixels;
     config_win_vals[3] = wm_conf.screen->height_in_pixels;
+    config_win_vals[4] = 0;
 
     xcb_configure_window(c, event->window, config_win_mask, config_win_vals);
 
@@ -316,12 +318,12 @@ void border_test(void)
         xcb_drawable_t window = wm_conf.screen->root;
         xcb_gcontext_t white = xcb_generate_id(wm_conf.connection);
         uint32_t mask = XCB_GC_FOREGROUND;
-        /*uint32_t value[] = { wm_conf.screen->white_pixel };*/
+        /* uint32_t value[] = { wm_conf.screen->white_pixel }; */
         uint32_t value[] = { 0xffff0000 };
 
         xcb_create_gc(wm_conf.connection, white, window, mask, value);
         xcb_rectangle_t rect[] = {{ client->rect.x - 2, client->rect.y - 2, client->rect.width + 4, client->rect.height + 4 }};
-        xcb_poly_rectangle(wm_conf.connection, window, white, 1, rect);
+        xcb_poly_fill_rectangle(wm_conf.connection, window, white, 1, rect);
         xcb_free_gc(wm_conf.connection, white);
 
         client = client->next;
@@ -423,6 +425,7 @@ client_t *manage_window(xcb_window_t window)
     read_client_geometry(client);
 
     /* Make adjustments */
+    client->border_width = 0;
 
     update_client_geometry(client);
 
