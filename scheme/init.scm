@@ -21,47 +21,46 @@
 ; number of "master" windows
 (define master-count 1)
 
-; simple window tiling hook
+(define (arrange-client client x y width height)
+  (move-client client x y)
+  (resize-client client width height)
+  (map-client client))
+
+(define (first-n l n) 
+  (let ((res (list))) 
+    (do ((idx 0 (+ idx 1))) 
+	((= idx n) (reverse res)) 
+      (set! res (cons (list-ref l idx) res)))))
+
+(define (rest-n l n)
+  (cond
+   ((> n (length l)) (list))
+   ((= n 0) l)
+   (#t (rest-n (cdr l) (- n 1)))))
+
+(define (split-vertical-iter clients x width increment cur)
+  (arrange-client (car clients) x cur width increment)
+  (if (= (length clients) 1)
+      #t
+      (split-vertical-iter (cdr clients) x width increment (+ cur increment))))
+
+(define (split-vertical clients x width)
+  (let ((increment (floor (/ (screen-height) (length clients)))))
+    (split-vertical-iter clients x width increment 0)))
+
 (define (arrange-hook)
-  (log "*** in arrange-hook ***")
-  (let ((s-h (screen-height))
-	(s-w (screen-width))
-	(clients (all-clients))
+  (let ((clients (all-clients))
 	(client-count (length (all-clients))))
-    (log (format #f "screen is ~Ax~A" s-w s-h))
-    (log (format #f "arranging ~A clients" (length clients)))
-    (for-each (lambda (c)
-		(log (format #f "client is ~Ax~A" (client-width c) (client-height c))))
-	      clients)
-    ; arrange master windows
-    (do ((idx 0 (+ idx 1))
-	 (width (floor (/ s-w 2)))
-	 (height (floor (/ s-h master-count)))
-	 (x 0))
-	((= idx master-count))
-      (let ((client (list-ref clients idx))
-	    (y (* idx height)))
-	(log (format #f "setting master #~A ~A to (~A,~A) ~Ax~A"
-		     idx
-		     client
-		     x y width height))
-	(move-client client x y)
-	(resize-client client width height)
-	(map-client client)))
-    ; arrange other windows
-    (do ((idx master-count (+ idx 1))
-	 (width (floor (/ s-w 2)))
-	 (height (floor (/ s-h (- client-count master-count))))
-	 (x (floor (/ s-w 2))))
-	((= idx client-count))
-      (let ((client (list-ref clients idx))
-	    (y (* (- idx master-count) height)))
-	(log (format #f "setting ~A to (~A,~A) ~Ax~A"
-		     client
-		     x y width height))
-	(move-client client x y)
-	(resize-client client width height)
-	(map-client client)))))
+    (cond
+     ((= client-count 1) (arrange-client (car clients)
+					 1 1
+					 (- (screen-width) 2)
+					 (- (screen-height) 2)))
+     ((> client-count 1)
+      (split-vertical (first-n clients master-count)
+		      0 (/ (screen-width) 2))
+      (split-vertical (rest-n clients master-count)
+		      (/ (screen-width) 2) (/ (screen-width) 2))))))
 
 (define (add-master)
   (set! master-count (+ master-count 1))
