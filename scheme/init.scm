@@ -39,7 +39,7 @@
    (#t (rest-n (cdr l) (- n 1)))))
 
 (define (split-vertical-iter clients x width increment cur)
-  (arrange-client (car clients) x cur width increment)
+  (arrange-client (car clients) x (+ cur 1) width (- increment 2))
   (if (= (length clients) 1)
       #t
       (split-vertical-iter (cdr clients) x width increment (+ cur increment))))
@@ -50,7 +50,8 @@
 
 (define (arrange-hook)
   (let ((clients (all-clients))
-	(client-count (length (all-clients))))
+	(client-count (length (all-clients)))
+	(half-screen-width (floor (/ (screen-width) 2))))
     (cond
      ((= client-count 1) (arrange-client (car clients)
 					 1 1
@@ -58,9 +59,9 @@
 					 (- (screen-height) 2)))
      ((> client-count 1)
       (split-vertical (first-n clients master-count)
-		      0 (/ (screen-width) 2))
+		      1 (- half-screen-width 2))
       (split-vertical (rest-n clients master-count)
-		      (/ (screen-width) 2) (/ (screen-width) 2))))))
+		      (+ half-screen-width 1) (- half-screen-width 2))))))
 
 (define (add-master)
   (set! master-count (+ master-count 1))
