@@ -162,11 +162,60 @@ static SCM scm_dump_client(SCM client_smob)
         /* not sure what to return here, will figure it out later */
         return SCM_UNSPECIFIED;
     }
-
     scm_c_write(out_port, str, len);
-
     free(str);
 
+    xcb_query_tree_cookie_t c = xcb_query_tree(wm_conf.connection, client->window);
+    xcb_query_tree_reply_t *r = xcb_query_tree_reply(wm_conf.connection, c, NULL);
+
+    if ((len = asprintf(&str, "root: %u\nparent: %u\nchildren_len: %u\n",
+                        r->root,
+                        r->parent,
+                        r->children_len)) < 0) {
+        fprintf(stderr, "asprintf failed\n");
+        return SCM_UNSPECIFIED;
+    }
+    scm_c_write(out_port, str, len);
+    free(str);
+
+    if (r)
+        free(r);
+
+    return SCM_UNSPECIFIED;
+}
+
+static SCM scm_get_input_focus(void)
+{
+    xcb_get_input_focus_cookie_t c = xcb_get_input_focus(wm_conf.connection);
+    xcb_get_input_focus_reply_t *r = xcb_get_input_focus_reply(wm_conf.connection, c, NULL);
+
+    char *str = NULL;
+    int len;
+    if ((len = asprintf(&str, "focus: %u\n", r->focus)) < 0) {
+        fprintf(stderr, "asprintf failed\n");
+        return SCM_UNSPECIFIED;
+    }
+    scm_c_write(scm_current_output_port(), str, len);
+
+    if (r)
+        free(r);
+    return SCM_UNSPECIFIED;
+}
+
+static SCM scm_focus_client(SCM client_smob)
+{
+    client_t *client = (client_t *)SCM_SMOB_DATA(client_smob);
+    xcb_void_cookie_t c = xcb_set_input_focus_checked(wm_conf.connection, 
+                                                      XCB_INPUT_FOCUS_POINTER_ROOT,
+                                                      client->window,
+                                                      XCB_CURRENT_TIME);
+    xcb_generic_error_t *e = xcb_request_check(wm_conf.connection, c);
+    if (e) {
+        fprintf(stderr, "xcb_set_input_focus_checked error: %s\n", 
+                xcb_event_get_error_label(e->error_code));
+        free(e);
+    }
+    draw_border(client);
     return SCM_UNSPECIFIED;
 }
 
@@ -223,6 +272,8 @@ void *init_scheme(void *data)
     scm_c_define_gsubr("bind-key", 3, 0, 0, &scm_bind_key);
 
     scm_c_define_gsubr("border-test", 0, 0, 0, &scm_border_test);
+    scm_c_define_gsubr("get-input-focus", 0, 0, 0, &scm_get_input_focus);
+    scm_c_define_gsubr("focus-client", 1, 0, 0, &scm_focus_client);
 
     scm_c_define_gsubr("log", 1, 0, 0, &scm_nwm_log);
 

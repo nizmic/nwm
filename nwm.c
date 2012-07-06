@@ -116,6 +116,23 @@ client_t * find_client(xcb_window_t win)
     return NULL;
 }
 
+void draw_border(client_t *client)
+{
+    xcb_aux_clear_window(wm_conf.connection, wm_conf.screen->root);
+    xcb_gcontext_t orange = xcb_generate_id(wm_conf.connection);
+    uint32_t mask = XCB_GC_FOREGROUND;
+    uint32_t value[] = { 0xffff0000 };
+    xcb_create_gc(wm_conf.connection, orange, wm_conf.screen->root, mask, value);
+    xcb_rectangle_t rect[] = {{ client->rect.x - 2,
+                                client->rect.y - 2,
+                                client->rect.width + 4,
+                                client->rect.height + 4 }};
+    xcb_poly_fill_rectangle(wm_conf.connection, wm_conf.screen->root, orange, 1, rect);
+    xcb_free_gc(wm_conf.connection, orange);
+    xcb_map_window(wm_conf.connection, wm_conf.screen->root);
+    xcb_flush(wm_conf.connection);
+}
+
 int handle_button_press_event(void *data, xcb_connection_t *c, xcb_button_press_event_t *event)
 {
     print_x_event((xcb_generic_event_t *)event);
@@ -207,6 +224,8 @@ int handle_destroy_notify_event(void *data, xcb_connection_t *c, xcb_destroy_not
 int handle_enter_notify_event(void *data, xcb_connection_t *c, xcb_enter_notify_event_t *event)
 {
     print_x_event((xcb_generic_event_t *)event);
+    fprintf(stderr, "enter_notify: root=%u, event=%u, child=%u\n",
+            event->root, event->event, event->child);
     return 0;
 }
 
@@ -585,7 +604,6 @@ void scan_windows(void)
         wins_len = xcb_query_tree_children_length(root_tree_replies[screen_idx]);
         fprintf(stderr, "root window %u has %d children\n", root_wins[screen_idx], wins_len);
 
-        /* TODO: get some info on each child so we can manage them */
         fprintf(stderr, "examining children\n");
         xcb_window_t child_win;
         int i;

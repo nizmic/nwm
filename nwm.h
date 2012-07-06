@@ -81,6 +81,7 @@ void map_client(client_t *);
 int bind_key(xcb_key_but_mask_t, xcb_keysym_t, SCM);
 
 void border_test(void);
+void draw_border(client_t *);
 void arrange(void);
 
 #endif
