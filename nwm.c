@@ -24,6 +24,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <stdbool.h>
+#include <errno.h>
 #include <xcb/xcb.h>
 #include <xcb/xcb_event.h>
 #include <xcb/xcb_aux.h>
