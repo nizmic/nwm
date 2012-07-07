@@ -78,6 +78,7 @@ SGLIB_DEFINE_LIST_PROTOTYPES(keybinding_t, COMPARE_KEYBINDING, next)
 
 void update_client_geometry(client_t *);
 void map_client(client_t *);
+client_t *find_client(xcb_window_t);
 int bind_key(xcb_key_but_mask_t, xcb_keysym_t, SCM);
 
 void border_test(void);
