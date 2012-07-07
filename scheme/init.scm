@@ -71,6 +71,12 @@
   (set! master-count (- master-count 1))
   (arrange-hook))
 
+(define (focus-next)
+  (focus-client (next-client (get-focus-client))))
+
+(define (focus-prev)
+  (focus-client (prev-client (get-focus-client))))
+
 ; run arrange-hook when hit ctrl-spacebar
 (bind-key 4 (string->number "20" 16) arrange-hook)
 
@@ -79,3 +85,9 @@
 
 ; remove a master, ctrl-'
 (bind-key 4 (string->number "27" 16) remove-master)
+
+; focus next, ctrl-j
+(bind-key 4 (string->number "6A" 16) focus-next)
+
+; focus prev, ctrl-k
+(bind-key 4 (string->number "6B" 16) focus-prev)

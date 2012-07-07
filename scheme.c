@@ -216,6 +216,30 @@ static SCM scm_focus_client(SCM client_smob)
     return SCM_UNSPECIFIED;
 }
 
+static SCM scm_next_client(SCM client_smob)
+{
+    SCM next_client;
+    client_t *client = (client_t *)SCM_SMOB_DATA(client_smob);
+    if (client->next) {
+        SCM_NEWSMOB(next_client, client_tag, client->next);
+    }
+    else {
+        SCM_NEWSMOB(next_client, client_tag, client_list);
+    }
+    return next_client;
+}
+
+static SCM scm_prev_client(SCM client_smob)
+{
+    SCM prev_client;
+    client_t *client = (client_t *)SCM_SMOB_DATA(client_smob);
+    client_t *cur = client_list;
+    while (cur->next && cur->next != client)
+        cur = cur->next;
+    SCM_NEWSMOB(prev_client, client_tag, cur);
+    return prev_client;
+}
+
 static SCM scm_screen_width(void)
 {
     return scm_from_unsigned_integer(wm_conf.screen->width_in_pixels);
@@ -252,6 +276,9 @@ void *init_scheme(void *data)
 
     scm_c_define_gsubr("all-clients", 0, 0, 0, &scm_all_clients);
     scm_c_define_gsubr("first-client", 0, 0, 0, &scm_first_client);
+    scm_c_define_gsubr("next-client", 1, 0, 0, &scm_next_client);
+    scm_c_define_gsubr("prev-client", 1, 0, 0, &scm_prev_client);
+
     scm_c_define_gsubr("test-undefined", 0, 0, 0, &scm_test_undefined);
 
     scm_c_define_gsubr("move-client", 3, 0, 0, &scm_move_client);
