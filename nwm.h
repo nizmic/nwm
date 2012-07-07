@@ -43,6 +43,7 @@ typedef struct nwm {
     bool xinerama_is_active;
     bool stop;
     char *conf_dir_path;
+    bool trace_x_events;
 } nwm_t;
 
 extern nwm_t wm_conf;

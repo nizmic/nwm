@@ -263,6 +263,15 @@ static SCM scm_nwm_log(SCM msg)
     return SCM_UNSPECIFIED;
 }
 
+static SCM scm_trace_x_events(SCM status)
+{
+    if (status == SCM_BOOL_T)
+        wm_conf.trace_x_events = 1;
+    else if (status == SCM_BOOL_F)
+        wm_conf.trace_x_events = 0;
+    return (wm_conf.trace_x_events ? SCM_BOOL_T : SCM_BOOL_F);
+}
+
 void *init_scheme(void *data)
 {
     scm_c_define_gsubr("nwm-stop", 0, 0, 0, &scm_nwm_stop);
@@ -293,6 +302,7 @@ void *init_scheme(void *data)
     scm_c_define_gsubr("focus-client", 1, 0, 0, &scm_focus_client);
 
     scm_c_define_gsubr("log", 1, 0, 0, &scm_nwm_log);
+    scm_c_define_gsubr("trace-x-events", 1, 0, 0, &scm_trace_x_events);
 
     init_client_type();
 

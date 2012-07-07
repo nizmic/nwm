@@ -307,7 +307,7 @@ void fallback_arrange(void)
     client_t *client = client_list;
     int i = 0;
 
-    fprintf(stderr, "Fallback window arrangement is being used. You should define arrange-hook.\n", clients_len);
+    fprintf(stderr, "Fallback window arrangement is being used. You should define arrange-hook.\n");
 
     while (i < clients_len) {
         client->rect.x = i * client_width;
@@ -328,7 +328,6 @@ void run_arrange_hook(void)
         scm_c_eval_string("(arrange-hook)");
     }
     else {
-        // run fallback arrange function
         fallback_arrange();
     }
 }
@@ -340,11 +339,8 @@ client_t *manage_window(xcb_window_t window)
     sglib_client_t_add(&client_list, client);
 
     read_client_geometry(client);
-
-    /* Make adjustments */
     client->border_width = 0;
     update_client_geometry(client);
-
     xcb_map_window(wm_conf.connection, client->window);
 
     run_arrange_hook();
@@ -359,12 +355,12 @@ int handle_map_request_event(void *data, xcb_connection_t *c, xcb_map_request_ev
     win_attrs_cookie = xcb_get_window_attributes_unchecked(c, event->window);
     win_attrs_reply = xcb_get_window_attributes_reply(c, win_attrs_cookie, NULL);
     if (!win_attrs_reply) {
-        fprintf(stderr, "  ! failed to get window attributes\n");
+        fprintf(stderr, "map request: failed to get window attributes\n");
         return -1;
     }
 
     if (win_attrs_reply->override_redirect) {
-        fprintf(stderr, "  window has override redirect set - ignoring map request\n");
+        fprintf(stderr, "map request: window has override redirect set - ignoring map request\n");
         return 0;
     }
 
@@ -387,7 +383,7 @@ int handle_unmap_notify_event(void *data, xcb_connection_t *c, xcb_unmap_notify_
 {
     client_t *client = find_client(event->window);
     if (client && XCB_EVENT_SENT(event)) {
-        fprintf(stderr, "  unmapping window %u\n", client->window);
+        fprintf(stderr, "unmap notify: unmapping window %u\n", client->window);
         sglib_client_t_delete(&client_list, client);
         xcb_unmap_window(wm_conf.connection, client->window);
         xcb_map_window(wm_conf.connection, event->event);
@@ -673,6 +669,8 @@ int main(int argc, char **argv)
 
         /* Handle all pending events */
         while ((event = xcb_poll_for_event(connection))) {
+            if (wm_conf.trace_x_events)
+                print_x_event(event);
             xcb_event_handle(event_handlers, event);
             free(event);
             xcb_flush(connection);
