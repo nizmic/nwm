@@ -256,12 +256,6 @@ static SCM scm_bind_key(SCM mod_mask, SCM keysym, SCM proc)
     return SCM_UNSPECIFIED;
 }
 
-static SCM scm_border_test(void)
-{
-    border_test();
-    return SCM_UNSPECIFIED;
-}
-
 static SCM scm_nwm_log(SCM msg)
 {
     char *c_msg = scm_to_locale_string(msg);
@@ -295,7 +289,6 @@ void *init_scheme(void *data)
 
     scm_c_define_gsubr("bind-key", 3, 0, 0, &scm_bind_key);
 
-    scm_c_define_gsubr("border-test", 0, 0, 0, &scm_border_test);
     scm_c_define_gsubr("get-focus-client", 0, 0, 0, &scm_get_focus_client);
     scm_c_define_gsubr("focus-client", 1, 0, 0, &scm_focus_client);
 

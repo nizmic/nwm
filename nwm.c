@@ -46,8 +46,6 @@ SGLIB_DEFINE_LIST_FUNCTIONS(client_t, COMPARE_CLIENT, next)
 keybinding_t *keybinding_list = NULL;
 SGLIB_DEFINE_LIST_FUNCTIONS(keybinding_t, COMPARE_KEYBINDING, next)
 
-/********** Initialization **********/
-
 void init_wm_conf(void)
 {
     memset(&wm_conf, 0, sizeof(nwm_t));
@@ -75,8 +73,6 @@ keybinding_t *keybinding_init(keybinding_t *binding)
     return binding;
 }
 
-/********** Error handling **********/
-
 void print_x_error(xcb_generic_error_t *error)
 {
     uint8_t error_code = error->error_code;
@@ -102,9 +98,6 @@ void print_x_event(xcb_generic_event_t *event)
     const char *label = xcb_event_get_label(event_type);
     fprintf(stderr, "X event %d : %s\n", event_type, label);
 }
-
-
-/********** Event handling **********/
 
 client_t * find_client(xcb_window_t win)
 {
@@ -136,40 +129,16 @@ void draw_border(client_t *client)
 
 int handle_button_press_event(void *data, xcb_connection_t *c, xcb_button_press_event_t *event)
 {
-    print_x_event((xcb_generic_event_t *)event);
-    fprintf(stderr, "  root: %u\n", event->root);
-    fprintf(stderr, "  event: %u\n", event->event);
-    fprintf(stderr, "  child: %u\n", event->child);
-    fprintf(stderr, "  root_x: %d\n", event->root_x);
-    fprintf(stderr, "  root_y: %d\n", event->root_y);
-    fprintf(stderr, "  event_x: %d\n", event->event_x);
-    fprintf(stderr, "  event_y: %d\n", event->event_y);
-    fprintf(stderr, "  detail: %u\n", (uint8_t)event->detail);
     return 0;
 }
 
 int handle_button_release_event(void *data, xcb_connection_t *c, xcb_button_press_event_t *event)
 {
-    print_x_event((xcb_generic_event_t *)event);
     return 0;
 }
 
-
-
 int handle_configure_request_event(void *data, xcb_connection_t *c, xcb_configure_request_event_t *event)
 {
-    print_x_event((xcb_generic_event_t *)event);
-    fprintf(stderr, "  parent: %u\n", event->parent);
-    fprintf(stderr, "  window: %u\n", event->window);
-    fprintf(stderr, "  sibling: %u\n", event->sibling);
-    fprintf(stderr, "  x: %d\n", event->x);
-    fprintf(stderr, "  y: %d\n", event->y);
-    fprintf(stderr, "  width: %u\n", event->width);
-    fprintf(stderr, "  height: %u\n", event->height);
-    fprintf(stderr, "  border_width: %u\n", event->border_width);
-    fprintf(stderr, "  -------------\n");
-
-    fprintf(stderr, "  totally ignoring requested values! muahaha\n");
     uint16_t config_win_mask = 0;
     uint32_t config_win_vals[5];
 
@@ -177,9 +146,7 @@ int handle_configure_request_event(void *data, xcb_connection_t *c, xcb_configur
                         XCB_CONFIG_WINDOW_WIDTH | XCB_CONFIG_WINDOW_HEIGHT |
                         XCB_CONFIG_WINDOW_BORDER_WIDTH);
 
-    fprintf(stderr, "  assigning full-screen size of %u x %u\n", 
-            wm_conf.screen->width_in_pixels,
-            wm_conf.screen->height_in_pixels);
+    /* currently assigning full screen size. need to rework this. */
     config_win_vals[0] = 0;
     config_win_vals[1] = 0;
     config_win_vals[2] = wm_conf.screen->width_in_pixels;
@@ -193,64 +160,46 @@ int handle_configure_request_event(void *data, xcb_connection_t *c, xcb_configur
 
 int handle_configure_notify_event(void *data, xcb_connection_t *c, xcb_configure_notify_event_t *event)
 {
-    print_x_event((xcb_generic_event_t *)event);
-    fprintf(stderr, "  window: %u\n", event->window);
-    fprintf(stderr, "  x: %d\n", event->x);
-    fprintf(stderr, "  y: %d\n", event->y);
-    fprintf(stderr, "  width: %u\n", event->width);
-    fprintf(stderr, "  height: %u\n", event->height);
-    fprintf(stderr, "  border_width: %u\n", event->border_width);
-
     return 0;
 }
 
 int handle_destroy_notify_event(void *data, xcb_connection_t *c, xcb_destroy_notify_event_t *event)
 {
-    print_x_event((xcb_generic_event_t *)event);
     client_t *client = find_client(event->window);
     if (client) {
-        fprintf(stderr, "  removing client window %u\n", client->window);
+        fprintf(stderr, "destroy notify: removing client window %u\n", client->window);
         sglib_client_t_delete(&client_list, client);
         free(client);
-
-        /* rearrange the windows */
         run_arrange_hook();
     }
     else {
-        fprintf(stderr, "  client window %u _not_ found!\n", event->window);
+        fprintf(stderr, "destroy notify: client window %u not found\n", event->window);
     }
     return 0;
 }
 
 int handle_enter_notify_event(void *data, xcb_connection_t *c, xcb_enter_notify_event_t *event)
 {
-    print_x_event((xcb_generic_event_t *)event);
-    fprintf(stderr, "enter_notify: root=%u, event=%u, child=%u\n",
-            event->root, event->event, event->child);
     return 0;
 }
 
 int handle_leave_notify_event(void *data, xcb_connection_t *c, xcb_leave_notify_event_t *event)
 {
-    print_x_event((xcb_generic_event_t *)event);
     return 0;
 }
 
 int handle_focus_in_event(void *data, xcb_connection_t *c, xcb_focus_in_event_t *event)
 {
-    print_x_event((xcb_generic_event_t *)event);
     return 0;
 }
 
 int handle_motion_notify_event(void *data, xcb_connection_t *c, xcb_motion_notify_event_t *event)
 {
-    print_x_event((xcb_generic_event_t *)event);
     return 0;
 }
 
 int handle_expose_event(void *data, xcb_connection_t *c, xcb_expose_event_t *event)
 {
-    print_x_event((xcb_generic_event_t *)event);
     return 0;
 }
 
@@ -270,27 +219,14 @@ void dump_client_list(void)
 
 int handle_key_press_event(void *data, xcb_connection_t *c, xcb_key_press_event_t *event)
 {
-    print_x_event((xcb_generic_event_t *)event);
-    fprintf(stderr, "  detail: %u\n", (uint8_t)event->detail);
-    fprintf(stderr, "  root: %u\n", event->root);
-    fprintf(stderr, "  event: %u\n", event->event);
-    fprintf(stderr, "  child: %u\n", event->child);
-    fprintf(stderr, "  root_x: %d\n", event->root_x);
-    fprintf(stderr, "  root_y: %d\n", event->root_y);
-    fprintf(stderr, "  event_x: %d\n", event->event_x);
-    fprintf(stderr, "  event_y: %d\n", event->event_y);
-    fprintf(stderr, "  --------\n");
-
     xcb_keycode_t keycode = event->detail;
     xcb_keysym_t keysym = xcb_key_symbols_get_keysym(wm_conf.key_syms, keycode, 0);
-    fprintf(stderr, "  keycode %u, keysym %u, state %u\n", keycode, keysym, event->state);
-
-    fprintf(stderr, "  checking keybinding list\n");
+    fprintf(stderr, "key press: keycode %u, keysym %u, state %u\n", keycode, keysym, event->state);
+    /* search key bindings */
     SCM key_proc = SCM_UNDEFINED;
     keybinding_t *binding = keybinding_list;
     while (binding) {
         if (binding->keysym == keysym && binding->mod_mask == event->state) {
-            fprintf(stderr, "  FOUND MATCH!\n");
             key_proc = binding->scm_proc;
         }
         binding = binding->next;
@@ -304,53 +240,13 @@ int handle_key_press_event(void *data, xcb_connection_t *c, xcb_key_press_event_
 
 int handle_key_release_event(void *data, xcb_connection_t *c, xcb_key_release_event_t *event)
 {
-    print_x_event((xcb_generic_event_t *)event);
     return 0;
 }
 
-/* Necessary?  Maybe just use find_client instead. */
-int already_managing_window(xcb_window_t win)
-{
-    client_t *client = client_list;
-    while (client) {
-        if (client->window == win)
-            return 1;
-        client = client->next;
-    }
-    return 0;
-}
-
-/* Used only by the scheme procs right now */
 void map_client(client_t *client)
 {
     xcb_map_window(wm_conf.connection, client->window);
     /* the map won't happen immediately unless we flush the connection */
-    xcb_flush(wm_conf.connection);
-}
-
-/* Used only by the scheme procs right now */
-void border_test(void)
-{
-    /* Draw borders of all clients on root window */
-    client_t *client = client_list;
-    xcb_aux_clear_window(wm_conf.connection, wm_conf.screen->root);
-    while (client) {
-        xcb_drawable_t window = wm_conf.screen->root;
-        xcb_gcontext_t white = xcb_generate_id(wm_conf.connection);
-        uint32_t mask = XCB_GC_FOREGROUND;
-        /* uint32_t value[] = { wm_conf.screen->white_pixel }; */
-        uint32_t value[] = { 0xffff0000 };
-
-        xcb_create_gc(wm_conf.connection, white, window, mask, value);
-        xcb_rectangle_t rect[] = {{ client->rect.x - 2, client->rect.y - 2, client->rect.width + 4, client->rect.height + 4 }};
-        xcb_poly_fill_rectangle(wm_conf.connection, window, white, 1, rect);
-        xcb_free_gc(wm_conf.connection, white);
-
-        client = client->next;
-    }
-
-    /* Map root window */
-    xcb_map_window(wm_conf.connection, wm_conf.screen->root);
     xcb_flush(wm_conf.connection);
 }
 
@@ -400,44 +296,45 @@ void read_client_geometry(client_t *client)
     }
 }
 
-/* Assume 1 master window for now */
-void arrange(void)
+void fallback_arrange(void)
 {
     int clients_len = sglib_client_t_len(client_list);
-    fprintf(stderr, "arranging %u windows\n", clients_len);
+    if (clients_len == 0)
+        return;
     uint16_t screen_width = wm_conf.screen->width_in_pixels;
     uint16_t screen_height = wm_conf.screen->height_in_pixels;
-
-    int master_count = 1;
-
+    uint16_t client_width = screen_width / clients_len;
     client_t *client = client_list;
     int i = 0;
+
+    fprintf(stderr, "Fallback window arrangement is being used. You should define arrange-hook.\n", clients_len);
+
     while (i < clients_len) {
-        if (i < master_count) {
-            client->rect.x = 0;
-            client->rect.y = screen_height / master_count * i;
-            client->rect.width = screen_width / 2;
-            client->rect.height = screen_height / master_count * (i + 1);
-            client->border_width = 0;
-        }
-        else {
-            client->rect.x = screen_width / 2;
-            client->rect.y = screen_height / (clients_len - master_count) * (i - master_count);
-            client->rect.width = screen_width / 2;
-            client->rect.height = screen_height / (clients_len - master_count) * (i - master_count + 1);
-            client->border_width = 0;
-        }
-
+        client->rect.x = i * client_width;
+        client->rect.y = 0;
+        client->rect.width = client_width;
+        client->rect.height = screen_height;
+        client->border_width = 0;
         update_client_geometry(client);
-
         ++i;
         client = client->next;
     }
 }
 
+void run_arrange_hook(void)
+{
+    SCM arrange_hook_sym = scm_from_locale_symbol("arrange-hook");
+    if (scm_defined_p(arrange_hook_sym, SCM_UNDEFINED) == SCM_BOOL_T) {
+        scm_c_eval_string("(arrange-hook)");
+    }
+    else {
+        // run fallback arrange function
+        fallback_arrange();
+    }
+}
+
 client_t *manage_window(xcb_window_t window)
 {
-    fprintf(stderr, "manage window %u\n", window);
     client_t *client = client_init(client_alloc());
     client->window = window;
     sglib_client_t_add(&client_list, client);
@@ -446,12 +343,10 @@ client_t *manage_window(xcb_window_t window)
 
     /* Make adjustments */
     client->border_width = 0;
-
     update_client_geometry(client);
 
     xcb_map_window(wm_conf.connection, client->window);
 
-    /* This is a potential place to tile the windows */
     run_arrange_hook();
 
     return client;    
@@ -459,16 +354,9 @@ client_t *manage_window(xcb_window_t window)
 
 int handle_map_request_event(void *data, xcb_connection_t *c, xcb_map_request_event_t *event)
 {
-    print_x_event((xcb_generic_event_t *)event);
-    fprintf(stderr, "  parent: %u\n", event->parent);
-    fprintf(stderr, "  window: %u\n", event->window);
-    fprintf(stderr, "  -------\n");
-
     xcb_get_window_attributes_cookie_t win_attrs_cookie;
     xcb_get_window_attributes_reply_t *win_attrs_reply;
-    fprintf(stderr, "  requesting window attributes\n");
     win_attrs_cookie = xcb_get_window_attributes_unchecked(c, event->window);
-    fprintf(stderr, "  waiting for reply\n");
     win_attrs_reply = xcb_get_window_attributes_reply(c, win_attrs_cookie, NULL);
     if (!win_attrs_reply) {
         fprintf(stderr, "  ! failed to get window attributes\n");
@@ -482,17 +370,10 @@ int handle_map_request_event(void *data, xcb_connection_t *c, xcb_map_request_ev
 
     client_t *client = NULL;
 
-    fprintf(stderr, "  checking whether we're already managing this window\n");
     client = find_client(event->window);
-    if (client) {
-        fprintf(stderr, "  yes, we are\n");
-    }
-    else {
-        fprintf(stderr, "  no, we are not\n");
+    if (!client)
         client = manage_window(event->window);
-    }
 
-    /* xcb_map_window(c, event->parent); */
     xcb_map_window(c, event->window);
 
     run_arrange_hook();
@@ -504,10 +385,8 @@ int handle_map_request_event(void *data, xcb_connection_t *c, xcb_map_request_ev
 
 int handle_unmap_notify_event(void *data, xcb_connection_t *c, xcb_unmap_notify_event_t *event)
 {
-    print_x_event((xcb_generic_event_t *)event);
-
     client_t *client = find_client(event->window);
-    if (client && /*event->event == wm_conf.screen->root &&*/ XCB_EVENT_SENT(event)) {
+    if (client && XCB_EVENT_SENT(event)) {
         fprintf(stderr, "  unmapping window %u\n", client->window);
         sglib_client_t_delete(&client_list, client);
         xcb_unmap_window(wm_conf.connection, client->window);
@@ -523,7 +402,6 @@ int handle_unmap_notify_event(void *data, xcb_connection_t *c, xcb_unmap_notify_
 
 int handle_client_message_event(void *data, xcb_connection_t *c, xcb_client_message_event_t *event)
 {
-    print_x_event((xcb_generic_event_t *)event);
     return 0;
 }
 
@@ -533,13 +411,11 @@ int handle_client_message_event(void *data, xcb_connection_t *c, xcb_client_mess
  */
 int handle_mapping_notify_event(void *data, xcb_connection_t *c, xcb_mapping_notify_event_t *event)
 {
-    print_x_event((xcb_generic_event_t *)event);
     return 0;
 }
 
 int handle_reparent_notify_event(void *data, xcb_connection_t *c, xcb_reparent_notify_event_t *event)
 {
-    print_x_event((xcb_generic_event_t *)event);
     return 0;
 }
 
@@ -575,8 +451,6 @@ void set_exclusive_error_handler(xcb_event_handlers_t *handlers, xcb_generic_err
 
 void scan_windows(void)
 {
-    fprintf(stderr, "scanning windows\n");
-
     const int screens_len = xcb_setup_roots_length(xcb_get_setup(wm_conf.connection));
     int screen_idx;
     xcb_window_t root_wins[screens_len];
@@ -777,20 +651,6 @@ int main(int argc, char **argv)
         XCB_EVENT_MASK_BUTTON_RELEASE |
         XCB_EVENT_MASK_FOCUS_CHANGE;
     xcb_change_window_attributes(connection, root_window, XCB_CW_EVENT_MASK, &root_win_event_mask);
-
-    /* successfully grab semicolon key! */
-    /* xcb_keycode_t *keycode_array = xcb_key_symbols_get_keycode(wm_conf.key_syms,  */
-    /*                                                            XK_semicolon); */
-    /* xcb_keycode_t keycode; */
-    /* int i = 0; */
-    /* if (keycode_array) { */
-    /*     while ((keycode = keycode_array[i++]) != XCB_NO_SYMBOL) { */
-    /*         xcb_grab_key(connection, 1, root_window, /\*XCB_BUTTON_MASK_ANY*\/ */
-    /*                      XCB_KEY_BUT_MASK_MOD_4, keycode, */
-    /*                      XCB_GRAB_MODE_ASYNC, XCB_GRAB_MODE_ASYNC); */
-    /*     } */
-    /*     free(keycode_array); */
-    /* } */
 
     xcb_ungrab_server(connection);
     xcb_flush(connection);

@@ -382,15 +382,3 @@ void repl_server_step(repl_server_t *server)
         conn = conn->next;
     }
 }
-
-void run_arrange_hook(void)
-{
-    SCM arrange_hook_sym = scm_from_locale_symbol("arrange-hook");
-    if (scm_defined_p(arrange_hook_sym, SCM_UNDEFINED) == SCM_BOOL_T) {
-        scm_c_eval_string("(arrange-hook)");
-    }
-    else {
-        // run default arrange function
-        arrange();
-    }
-}
