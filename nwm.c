@@ -324,6 +324,41 @@ void fallback_arrange(void)
         ++i;
         client = client->next;
     }
+
+    client_t *focus_client = get_focus_client();
+    if (focus_client) {
+        draw_border(focus_client);
+    }
+    else if (client_list) {
+        set_focus_client(client_list);
+        draw_border(client_list);
+    }
+}
+
+client_t *get_focus_client(void)
+{
+    xcb_get_input_focus_cookie_t c = xcb_get_input_focus(wm_conf.connection);
+    xcb_get_input_focus_reply_t *r = xcb_get_input_focus_reply(wm_conf.connection, c, NULL);
+    client_t *focus_client = NULL;
+    if (r) {
+        focus_client = find_client(r->focus);
+        free(r);
+    }
+    return focus_client;
+}
+
+void set_focus_client(client_t *client)
+{
+    xcb_void_cookie_t c = xcb_set_input_focus_checked(wm_conf.connection, 
+                                                      XCB_INPUT_FOCUS_POINTER_ROOT,
+                                                      client->window,
+                                                      XCB_CURRENT_TIME);
+    xcb_generic_error_t *e = xcb_request_check(wm_conf.connection, c);
+    if (e) {
+        fprintf(stderr, "xcb_set_input_focus_checked error: %s\n", 
+                xcb_event_get_error_label(e->error_code));
+        free(e);
+    }
 }
 
 void run_arrange_hook(void)
@@ -334,6 +369,14 @@ void run_arrange_hook(void)
     }
     else {
         fallback_arrange();
+    }
+    client_t *focus_client = get_focus_client();
+    if (focus_client) {
+        draw_border(focus_client);
+    }
+    else if (client_list) {
+        set_focus_client(client_list);
+        draw_border(client_list);
     }
 }
 

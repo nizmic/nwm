@@ -186,17 +186,12 @@ static SCM scm_dump_client(SCM client_smob)
 
 static SCM scm_get_focus_client(void)
 {
-    xcb_get_input_focus_cookie_t c = xcb_get_input_focus(wm_conf.connection);
-    xcb_get_input_focus_reply_t *r = xcb_get_input_focus_reply(wm_conf.connection, c, NULL);
-    SCM client = SCM_UNSPECIFIED;
-    if (r) {
-        client_t *c = find_client(r->focus);
-        if (c) {
-            SCM_NEWSMOB(client, client_tag, c);
-        }
-        free(r);
-    }
-    return client;
+    client_t *focus_client = get_focus_client();
+    SCM client_smob = SCM_UNSPECIFIED;
+    if (focus_client)
+        SCM_NEWSMOB(client_smob, client_tag, focus_client);
+
+    return client_smob;
 }
 
 static SCM scm_focus_client(SCM client_smob)
@@ -210,16 +205,7 @@ static SCM scm_focus_client(SCM client_smob)
     if (!client)
         return SCM_UNSPECIFIED;
 
-    xcb_void_cookie_t c = xcb_set_input_focus_checked(wm_conf.connection, 
-                                                      XCB_INPUT_FOCUS_POINTER_ROOT,
-                                                      client->window,
-                                                      XCB_CURRENT_TIME);
-    xcb_generic_error_t *e = xcb_request_check(wm_conf.connection, c);
-    if (e) {
-        fprintf(stderr, "xcb_set_input_focus_checked error: %s\n", 
-                xcb_event_get_error_label(e->error_code));
-        free(e);
-    }
+    set_focus_client(client);
     draw_border(client);
     return SCM_UNSPECIFIED;
 }
