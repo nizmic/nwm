@@ -185,11 +185,13 @@ int handle_destroy_notify_event(void *data, xcb_connection_t *c, xcb_destroy_not
 
 int handle_enter_notify_event(void *data, xcb_connection_t *c, xcb_enter_notify_event_t *event)
 {
+    fprintf(stderr, "enter notify\n");
     return 0;
 }
 
 int handle_leave_notify_event(void *data, xcb_connection_t *c, xcb_leave_notify_event_t *event)
 {
+    fprintf(stderr, "leave notify\n");
     return 0;
 }
 
