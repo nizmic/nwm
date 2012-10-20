@@ -18,6 +18,9 @@
 ;;; 02110-1301, USA 
 ;;;
 
+; path to terminal program
+(define term-program-path "/usr/bin/xterm")
+
 ; number of "master" windows
 (define master-count 1)
 
@@ -77,6 +80,9 @@
 (define (focus-prev)
   (focus-client (prev-client (get-focus-client))))
 
+(define (launch-term)
+  (launch-program term-program-path))
+
 ; run arrange-hook when hit ctrl-spacebar
 (bind-key 4 (string->number "20" 16) arrange-hook)
 
@@ -91,3 +97,6 @@
 
 ; focus prev, ctrl-k
 (bind-key 4 (string->number "6B" 16) focus-prev)
+
+; launch terminal, ctrl-enter
+(bind-key 4 (string->number "FF0D" 16) launch-term)

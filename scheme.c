@@ -19,6 +19,8 @@
 
 #define _GNU_SOURCE
 #include <stdio.h>
+#include <errno.h>
+#include <unistd.h>
 
 #include <libguile.h>
 
@@ -259,6 +261,23 @@ static SCM scm_nwm_log(SCM msg)
     return SCM_UNSPECIFIED;
 }
 
+static SCM scm_launch_program(SCM path)
+{
+    char *c_path = scm_to_locale_string(path);
+    fprintf(stderr, "launching program %s\n", c_path);
+    pid_t pid = fork();
+    if (pid == 0) {
+        if (execl(c_path, c_path, NULL) == -1) {
+            perror("execl failed");
+            exit(2);
+        }
+    }
+    else {
+        fprintf(stderr, "launched %s as pid %d\n", c_path, pid);
+    }
+    return SCM_UNSPECIFIED;
+}
+
 static SCM scm_trace_x_events(SCM status)
 {
     if (status == SCM_BOOL_T)
@@ -296,6 +315,8 @@ void *init_scheme(void *data)
 
     scm_c_define_gsubr("get-focus-client", 0, 0, 0, &scm_get_focus_client);
     scm_c_define_gsubr("focus-client", 1, 0, 0, &scm_focus_client);
+
+    scm_c_define_gsubr("launch-program", 1, 0, 0, &scm_launch_program);
 
     scm_c_define_gsubr("log", 1, 0, 0, &scm_nwm_log);
     scm_c_define_gsubr("trace-x-events", 1, 0, 0, &scm_trace_x_events);
