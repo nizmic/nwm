@@ -202,12 +202,12 @@ int handle_focus_in_event(void *data, xcb_connection_t *c, xcb_focus_in_event_t 
 
 int handle_motion_notify_event(void *data, xcb_connection_t *c, xcb_motion_notify_event_t *event)
 {
-    client_t *focus_client = get_focus_client();
+    /*client_t *focus_client = get_focus_client();
     client_t *motion_client = find_client(event->child);
     if (motion_client && focus_client != motion_client) {
         set_focus_client(motion_client);
         draw_border(motion_client);
-    }
+        }*/
     return 0;
 }
 
@@ -701,8 +701,7 @@ int main(int argc, char **argv)
         XCB_EVENT_MASK_PROPERTY_CHANGE |
         XCB_EVENT_MASK_BUTTON_PRESS |
         XCB_EVENT_MASK_BUTTON_RELEASE |
-        XCB_EVENT_MASK_FOCUS_CHANGE |
-        XCB_EVENT_MASK_POINTER_MOTION;
+        XCB_EVENT_MASK_FOCUS_CHANGE;
     xcb_change_window_attributes(connection, root_window, XCB_CW_EVENT_MASK, &root_win_event_mask);
 
     xcb_ungrab_server(connection);
