@@ -25,6 +25,7 @@
 #include <string.h>
 #include <stdbool.h>
 #include <errno.h>
+#include <sys/time.h>
 #include <xcb/xcb.h>
 #include <xcb/xcb_event.h>
 #include <xcb/xcb_aux.h>
@@ -37,6 +38,8 @@
 
 #include "nwm.h"
 #include "repl-server.h"
+
+typedef void (*event_loop_task_func)(void);
 
 nwm_t wm_conf;
 
@@ -652,6 +655,76 @@ void init_conf_dir(void)
     wm_conf.conf_dir_path = conf_dir_path;
 }
 
+static void event_task_repl_server(void)
+{
+    repl_server_step(wm_conf.repl_server);
+}
+
+static void event_task_x_events(void)
+{
+    xcb_generic_event_t *event;
+    /* Handle all pending events */
+    while ((event = xcb_poll_for_event(wm_conf.connection))) {
+        if (wm_conf.trace_x_events)
+            print_x_event(event);
+        xcb_event_handle(&wm_conf.event_handlers, event);
+        free(event);
+        xcb_flush(wm_conf.connection);
+    }
+}
+
+static void event_task_autofocus(void)
+{
+    auto_focus_pointer();
+}
+
+static inline long timeval_usec_diff(struct timeval *begin, struct timeval *end)
+{
+    return ((end->tv_sec - begin->tv_sec) * 1000000L + 
+            (long)(end->tv_usec - begin->tv_usec));
+}
+
+static void event_loop(void)
+{
+    /* Set up a circular list of task functions */
+    static const event_loop_task_func task_funcs[] = {
+        &event_task_repl_server,
+        &event_task_x_events,
+        &event_task_autofocus,
+    };
+    static const int task_func_count = sizeof(task_funcs) / sizeof(event_loop_task_func);
+    static const long usec_slice_size = 20000L;
+
+    int task_idx = 0;
+    struct timeval begin_time, end_time;
+    while (!wm_conf.stop) {
+        gettimeofday(&begin_time, NULL);
+        gettimeofday(&end_time, NULL);  /* Just making sure end_time is initialized */
+
+        /* Start as many of the tasks (max of once per task) as possible within 
+         * usec_slice_size microseconds.  The event loop blocks for the duration
+         * of each task.  The loop terminates after either all tasks have been
+         * completed or more time has elapsed than usec_slice_size microseconds.
+         */
+        int i;
+        for (i = 0; i < task_func_count; ++i) {
+            if (timeval_usec_diff(&begin_time, &end_time) > usec_slice_size)
+                break;
+            event_loop_task_func task_func = task_funcs[task_idx];
+            (*task_func)();
+            gettimeofday(&end_time, NULL);
+            if (++task_idx == task_func_count)
+                task_idx = 0;
+        }
+
+        /* Sleep for remaining microseconds of time slice, or 1 microsecond if the
+         * entire time slice was used.
+         */
+        long usleep_time = usec_slice_size - timeval_usec_diff(&begin_time, &end_time);
+        usleep(usleep_time > 0 ? usleep_time : 1);
+    }
+}
+
 int main(int argc, char **argv)
 {
     xcb_connection_t *connection = xcb_connect(NULL, &wm_conf.default_screen_num);
@@ -719,41 +792,11 @@ int main(int argc, char **argv)
     xcb_ungrab_server(connection);
     xcb_flush(connection);
 
-    fprintf(stderr, "entering event loop\n");
-
-    /* event loop */
-
-    /* This thing needs to be reworked.  It simply pauses for 1/10 of a second each time 
-     * through the loop.  The sleep time should be based on how long the iteration took.
-     */
-
-    repl_server_t *server = repl_server_init();
+    wm_conf.repl_server = repl_server_init();
     load_init_scheme();
 
-    xcb_generic_event_t *event;
-    int loop_count = 0;
-    while (!wm_conf.stop) {
-
-        repl_server_step(server);
-
-        /* Handle all pending events */
-        while ((event = xcb_poll_for_event(connection))) {
-            if (wm_conf.trace_x_events)
-                print_x_event(event);
-            xcb_event_handle(event_handlers, event);
-            free(event);
-            xcb_flush(connection);
-        }
-
-        /* Do auto focus (focus window under pointer) every 5 times through the
-         * loop.  Just a hack to use until I completely rework this event loop.
-         */
-        if (loop_count % 5 == 0)
-            auto_focus_pointer();
-        
-        usleep(50000);
-        loop_count++;
-    }
+    fprintf(stderr, "entering event loop\n");
+    event_loop();
 
     xcb_disconnect(connection);
 

@@ -34,6 +34,8 @@
 /* Configuration data directory, relative to $HOME */
 #define CONF_DIR ".nwm"
 
+typedef struct repl_server repl_server_t;
+
 typedef struct nwm {
     xcb_connection_t *connection;
     xcb_event_handlers_t event_handlers;
@@ -44,6 +46,7 @@ typedef struct nwm {
     bool stop;
     char *conf_dir_path;
     bool trace_x_events;
+    repl_server_t *repl_server;
 } nwm_t;
 
 extern nwm_t wm_conf;
