@@ -25,6 +25,7 @@
 #include <string.h>
 #include <stdbool.h>
 #include <errno.h>
+#include <time.h>
 #include <xcb/xcb.h>
 #include <xcb/xcb_event.h>
 #include <xcb/xcb_aux.h>
@@ -727,14 +728,15 @@ int main(int argc, char **argv)
      * through the loop.  The sleep time should be based on how long the iteration took.
      */
 
-    repl_server_t *server = repl_server_init();
+    wm_conf.repl_server = repl_server_init();
     load_init_scheme();
 
     xcb_generic_event_t *event;
     int loop_count = 0;
     while (!wm_conf.stop) {
 
-        repl_server_step(server);
+        time_t start = time(NULL);
+        repl_server_step(wm_conf.repl_server);
 
         /* Handle all pending events */
         while ((event = xcb_poll_for_event(connection))) {
