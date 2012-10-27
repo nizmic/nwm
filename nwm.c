@@ -687,19 +687,25 @@ static inline long timeval_usec_diff(struct timeval *begin, struct timeval *end)
 static void event_loop(void)
 {
     /* Set up a circular list of task functions */
-    event_loop_task_func task_funcs[] = {
+    static const event_loop_task_func task_funcs[] = {
         &event_task_repl_server,
         &event_task_x_events,
         &event_task_autofocus,
     };
-    int task_func_count = sizeof(task_funcs) / sizeof(event_loop_task_func);
-    const long usec_slice_size = 20000L;
+    static const int task_func_count = sizeof(task_funcs) / sizeof(event_loop_task_func);
+    static const long usec_slice_size = 20000L;
 
     int task_idx = 0;
     struct timeval begin_time, end_time;
     while (!wm_conf.stop) {
         gettimeofday(&begin_time, NULL);
-        gettimeofday(&end_time, NULL);
+        gettimeofday(&end_time, NULL);  /* Just making sure end_time is initialized */
+
+        /* Start as many of the tasks (max of once per task) as possible within 
+         * usec_slice_size microseconds.  The event loop blocks for the duration
+         * of each task.  The loop terminates after either all tasks have been
+         * completed or more time has elapsed than usec_slice_size microseconds.
+         */
         int i;
         for (i = 0; i < task_func_count; ++i) {
             if (timeval_usec_diff(&begin_time, &end_time) > usec_slice_size)
@@ -711,6 +717,9 @@ static void event_loop(void)
                 task_idx = 0;
         }
 
+        /* Sleep for remaining microseconds of time slice, or 1 microsecond if the
+         * entire time slice was used.
+         */
         long usleep_time = usec_slice_size - timeval_usec_diff(&begin_time, &end_time);
         usleep(usleep_time > 0 ? usleep_time : 1);
     }
