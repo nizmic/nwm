@@ -202,12 +202,6 @@ int handle_focus_in_event(void *data, xcb_connection_t *c, xcb_focus_in_event_t 
 
 int handle_motion_notify_event(void *data, xcb_connection_t *c, xcb_motion_notify_event_t *event)
 {
-    client_t *focus_client = get_focus_client();
-    client_t *motion_client = find_client(event->child);
-    if (motion_client && focus_client != motion_client) {
-        set_focus_client(motion_client);
-        draw_border(motion_client);
-    }
     return 0;
 }
 
@@ -612,6 +606,24 @@ int bind_key(xcb_key_but_mask_t mod_mask, xcb_keysym_t keysym, SCM proc)
     return 1;
 }
 
+void auto_focus_pointer(void)
+{
+    xcb_query_pointer_cookie_t c = xcb_query_pointer_unchecked(wm_conf.connection,
+                                                               wm_conf.screen->root);
+    xcb_query_pointer_reply_t *reply = xcb_query_pointer_reply(wm_conf.connection,
+                                                               c,
+                                                               NULL);
+    if (reply) {
+        client_t *focus_client = get_focus_client();
+        client_t *motion_client = find_client(reply->child);
+        if (motion_client && focus_client != motion_client) {
+            set_focus_client(motion_client);
+            draw_border(motion_client);
+        }
+        free(reply);
+    }
+}
+
 void init_conf_dir(void)
 {
     char *home_path = getenv("HOME");
@@ -701,8 +713,7 @@ int main(int argc, char **argv)
         XCB_EVENT_MASK_PROPERTY_CHANGE |
         XCB_EVENT_MASK_BUTTON_PRESS |
         XCB_EVENT_MASK_BUTTON_RELEASE |
-        XCB_EVENT_MASK_FOCUS_CHANGE |
-        XCB_EVENT_MASK_POINTER_MOTION;
+        XCB_EVENT_MASK_FOCUS_CHANGE;
     xcb_change_window_attributes(connection, root_window, XCB_CW_EVENT_MASK, &root_win_event_mask);
 
     xcb_ungrab_server(connection);
@@ -720,6 +731,7 @@ int main(int argc, char **argv)
     load_init_scheme();
 
     xcb_generic_event_t *event;
+    int loop_count = 0;
     while (!wm_conf.stop) {
 
         repl_server_step(server);
@@ -732,8 +744,15 @@ int main(int argc, char **argv)
             free(event);
             xcb_flush(connection);
         }
+
+        /* Do auto focus (focus window under pointer) every 5 times through the
+         * loop.  Just a hack to use until I completely rework this event loop.
+         */
+        if (loop_count % 5 == 0)
+            auto_focus_pointer();
         
         usleep(50000);
+        loop_count++;
     }
 
     xcb_disconnect(connection);
