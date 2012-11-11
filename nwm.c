@@ -618,10 +618,15 @@ void auto_focus_pointer(void)
                                                                NULL);
     if (reply) {
         client_t *focus_client = get_focus_client();
-        client_t *motion_client = find_client(reply->child);
-        if (motion_client && focus_client != motion_client) {
-            set_focus_client(motion_client);
-            draw_border(motion_client);
+        client_t *pointer_client = find_client(reply->child);
+        if (!wm_conf.pointer_window)  /* pointer_window hasn't been initialized yet */
+            wm_conf.pointer_window = reply->child;
+        if (pointer_client) {
+            if (wm_conf.pointer_window != pointer_client->window) {
+                set_focus_client(pointer_client);
+                draw_border(pointer_client);
+            }
+            wm_conf.pointer_window = pointer_client->window;
         }
         free(reply);
     }
