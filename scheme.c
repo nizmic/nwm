@@ -199,7 +199,6 @@ static SCM scm_get_focus_client(void)
 static SCM scm_focus_client(SCM client_smob)
 {
     client_t *client = NULL;
-    wm_conf.focus_changed_manually = true;
     if (scm_is_eq(client_smob, SCM_UNSPECIFIED))
         client = client_list;  // Use first client in list if we aren't given a good client_smob
     else

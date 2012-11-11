@@ -47,7 +47,6 @@ typedef struct nwm {
     char *conf_dir_path;
     bool trace_x_events;
     repl_server_t *repl_server;
-    bool focus_changed_manually;
     xcb_window_t pointer_window;
 } nwm_t;
 

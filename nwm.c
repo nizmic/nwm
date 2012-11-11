@@ -622,16 +622,13 @@ void auto_focus_pointer(void)
         if (!wm_conf.pointer_window)  /* pointer_window hasn't been initialized yet */
             wm_conf.pointer_window = reply->child;
         if (pointer_client) {
-            if ((!wm_conf.focus_changed_manually && focus_client != pointer_client)
-                || (wm_conf.focus_changed_manually
-                    && wm_conf.pointer_window != pointer_client->window)) {
+            if (wm_conf.pointer_window != pointer_client->window) {
                 set_focus_client(pointer_client);
                 draw_border(pointer_client);
-                wm_conf.focus_changed_manually = false;
             }
             wm_conf.pointer_window = pointer_client->window;
-            free(reply);
         }
+        free(reply);
     }
 }
 
