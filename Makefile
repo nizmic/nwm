@@ -36,11 +36,10 @@ XCB_LIBS = $(shell $(PKG_CONFIG) --libs xcb xcb-aux xcb-event \
 		xcb-keysyms xcb-xinerama)
 GUILE_CFLAGS = $(shell $(GUILE_CONFIG) compile)
 GUILE_LIBS = $(shell $(GUILE_CONFIG) link)
-
-CFLAGS = -Wall -g $(XCB_CFLAGS) $(GUILE_CFLAGS)
 LIBS = $(XCB_LIBS) $(GUILE_LIBS) -lreadline
-LDFLAGS = -Wl,-O1,--sort-common,--as-needed,-z,relro,--hash-style=gnu \
-	$(LIBS)
+
+CFLAGS = -Wall -O2 -g $(XCB_CFLAGS) $(GUILE_CFLAGS)
+LDFLAGS = $(LIBS)
 
 objects = nwm.o repl-server.o scheme.o event.o nwm-repl.o
 bins = nwm nwm-repl
