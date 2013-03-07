@@ -67,8 +67,8 @@ uninstall:
 	-rm -vf $(bindir)/nwm-repl
 
 nwm: nwm.o repl-server.o scheme.o event.o
-	gcc $^ -o $@ $(LDFLAGS)
+	$(CC) $^ -o $@ $(LDFLAGS)
 
 nwm-repl: nwm-repl.o
-	gcc $^ -o $@ $(LDFLAGS)
+	$(CC) $^ -o $@ $(LDFLAGS)
 
