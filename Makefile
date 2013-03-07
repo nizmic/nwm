@@ -50,7 +50,7 @@ all: build
 build: $(bins)
 
 clean:
-	rm -f $(bins) $(objects) 
+	rm -vf $(bins) $(objects) 
 
 install: build
 	$(MKDIR_P) $(bindir)
@@ -68,5 +68,5 @@ nwm: nwm.o repl-server.o scheme.o event.o
 	gcc $^ -o $@ $(LDFLAGS)
 
 nwm-repl: nwm-repl.o
-	gcc $< -o $@ $(LDFLAGS)
+	gcc $^ -o $@ $(LDFLAGS)
 
