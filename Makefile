@@ -30,8 +30,10 @@ INSTALL_BIN = $(INSTALL) -m755
 INSTALL_DATA = $(INSTALL) -m644
 MKDIR_P = mkdir -p
 
-XCB_CFLAGS = $(shell $(PKG_CONFIG) --cflags xcb xcb-aux xcb-event xcb-keysyms xcb-xinerama)
-XCB_LIBS = $(shell $(PKG_CONFIG) --libs xcb xcb-aux xcb-event xcb-keysyms xcb-xinerama)
+XCB_CFLAGS = $(shell $(PKG_CONFIG) --cflags xcb xcb-aux xcb-event \
+		xcb-keysyms xcb-xinerama)
+XCB_LIBS = $(shell $(PKG_CONFIG) --libs xcb xcb-aux xcb-event \
+		xcb-keysyms xcb-xinerama)
 GUILE_CFLAGS = $(shell $(GUILE_CONFIG) compile)
 GUILE_LIBS = $(shell $(GUILE_CONFIG) link)
 
