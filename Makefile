@@ -1,5 +1,5 @@
 # nwm - a programmable window manager
-# Copyright (C) 2010-2012  Nathan Sullivan
+# Copyright (C) 2010-2013  Nathan Sullivan
 #
 # This program is free software; you can redistribute it and/or 
 # modify it under the terms of the GNU General Public License 
@@ -17,24 +17,57 @@
 # 02110-1301, USA 
 #
 
-CFLAGS = -Wall `pkg-config --cflags xcb xcb-aux xcb-event xcb-keysyms xcb-xinerama` `guile-config compile` -g
-LIBS = `pkg-config --libs xcb xcb-aux xcb-event xcb-keysyms xcb-xinerama` `guile-config link` -lreadline
+DESTDIR =
+prefix = /usr/local
+bindir = $(prefix)/bin
+datadir = $(prefix)/share
 
-.PHONY: clean build
+CC = gcc
+PKG_CONFIG = pkg-config
+GUILE_CONFIG = guile-config
+INSTALL = install -D
+INSTALL_BIN = $(INSTALL) -m755
+INSTALL_DATA = $(INSTALL) -m644
+MKDIR_P = mkdir -p
 
-build: nwm nwm-repl
+XCB_CFLAGS = $(shell $(PKG_CONFIG) --cflags xcb xcb-aux xcb-event \
+		xcb-keysyms xcb-xinerama)
+XCB_LIBS = $(shell $(PKG_CONFIG) --libs xcb xcb-aux xcb-event \
+		xcb-keysyms xcb-xinerama)
+GUILE_CFLAGS = $(shell $(GUILE_CONFIG) compile)
+GUILE_LIBS = $(shell $(GUILE_CONFIG) link)
+LIBS = $(XCB_LIBS) $(GUILE_LIBS) -lreadline
+
+CFLAGS = -Wall -O2 -g $(XCB_CFLAGS) $(GUILE_CFLAGS)
+LDFLAGS = $(LIBS)
+
+objects = nwm.o repl-server.o scheme.o event.o nwm-repl.o
+bins = nwm nwm-repl
+
+.PHONY: all build clean install uninstall
+
+all: build
+
+build: $(bins)
 
 clean:
-	rm -f nwm nwm-repl nwm.o nwm-repl.o repl-server.o scheme.o event.o
+	rm -vf $(bins) $(objects) 
+
+install: build
+	$(MKDIR_P) $(bindir)
+	$(MKDIR_P) $(datadir)/nwm/scheme
+	$(INSTALL_BIN) nwm $(bindir)/nwm
+	$(INSTALL_BIN) nwm-repl $(bindir)/nwm-repl
+	$(INSTALL_DATA) scheme/init.scm $(datadir)/nwm/scheme/init.scm
+
+uninstall:
+	-rm -rvf $(datadir)/nwm
+	-rm -vf $(bindir)/nwm
+	-rm -vf $(bindir)/nwm-repl
 
 nwm: nwm.o repl-server.o scheme.o event.o
-	gcc nwm.o repl-server.o scheme.o event.o -o $@ $(LIBS)
-
-nwm.o repl-server.o scheme.o event.o: nwm.c repl-server.c nwm.h repl-server.h scheme.h scheme.c event.c
-	gcc -c nwm.c repl-server.c scheme.c event.c $(CFLAGS)
+	$(CC) $^ -o $@ $(LDFLAGS)
 
 nwm-repl: nwm-repl.o
-	gcc $< -o $@ $(LIBS)
+	$(CC) $^ -o $@ $(LDFLAGS)
 
-nwm-repl.o: nwm-repl.c
-	gcc -c $< -o $@ $(CFLAGS)
