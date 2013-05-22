@@ -238,12 +238,13 @@ int handle_key_press_event(void *data, xcb_connection_t *c, xcb_key_press_event_
     while (binding) {
         if (binding->keysym == keysym && binding->mod_mask == event->state) {
             key_proc = binding->scm_proc;
+            break;
         }
         binding = binding->next;
     }
 
     if (key_proc != SCM_UNDEFINED)
-        scm_call_0(key_proc);
+        scm_call(key_proc, SCM_UNDEFINED);
 
     return 0;
 }
