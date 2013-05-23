@@ -256,14 +256,19 @@ static SCM scm_bind_key(SCM mod_mask, SCM keysym, SCM proc)
 
 static SCM scm_nwm_log(SCM msg)
 {
+    scm_dynwind_begin(0);
     char *c_msg = scm_to_locale_string(msg);
+    scm_dynwind_free(c_msg);
     fprintf(stderr, "%s\n", c_msg);
+    scm_dynwind_end();
     return SCM_UNSPECIFIED;
 }
 
 static SCM scm_launch_program(SCM path)
 {
+    scm_dynwind_begin(0);
     char *c_path = scm_to_locale_string(path);
+    scm_dynwind_free(c_path);
     fprintf(stderr, "launching program %s\n", c_path);
     pid_t pid = fork();
     if (pid == 0) {
@@ -275,6 +280,7 @@ static SCM scm_launch_program(SCM path)
     else {
         fprintf(stderr, "launched %s as pid %d\n", c_path, pid);
     }
+    scm_dynwind_end();
     return SCM_UNSPECIFIED;
 }
 
