@@ -71,7 +71,8 @@
   (arrange-hook))
 
 (define (remove-master)
-  (set! master-count (- master-count 1))
+  (if (> master-count 0)
+      (set! master-count (- master-count 1)))
   (arrange-hook))
 
 (define (focus-next)
