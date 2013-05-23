@@ -100,3 +100,6 @@
 
 ; launch terminal, ctrl-enter
 (bind-key 4 (string->number "FF0D" 16) launch-term)
+
+; quit nwm, ctrl-shift-q
+(bind-key 5 (string->number "71" 16) nwm-stop)
