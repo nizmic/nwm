@@ -72,6 +72,16 @@
       (set! master-count (- master-count 1)))
   (arrange-hook))
 
+(define (grow-master)
+  (if (< master-width 94)
+      (set! master-width (+ master-width 5)))
+  (arrange-hook))
+
+(define (shrink-master)
+  (if (>= master-width 6)
+      (set! master-width (- master-width 5)))
+  (arrange-hook))
+
 (define (focus-next)
   (focus-client (next-client (get-focus-client))))
 
@@ -98,6 +108,12 @@
 
 ; focus prev, ctrl-k
 (bind-key 4 "k" focus-prev)
+
+; focus next, ctrl-l
+(bind-key 4 "l" grow-master)
+
+; focus prev, ctrl-h
+(bind-key 4 "h" shrink-master)
 
 ; launch terminal, ctrl-enter
 (bind-key 4 "Enter" launch-term)
