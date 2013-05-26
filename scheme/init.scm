@@ -19,7 +19,9 @@
 ;;;
 
 ; path to terminal program
-(define term-program-path "/usr/bin/xterm")
+(define term-program '("xterm"))
+; you can supply arguments like so:
+; (define term-program '("xterm" "-e" "screen"))
 
 ; number of "master" windows
 (define master-count 1)
@@ -82,7 +84,7 @@
   (focus-client (prev-client (get-focus-client))))
 
 (define (launch-term)
-  (launch-program term-program-path))
+  (launch-program term-program))
 
 ; run arrange-hook when hit ctrl-spacebar
 (bind-key 4 (string->number "20" 16) arrange-hook)
