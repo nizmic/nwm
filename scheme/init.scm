@@ -27,22 +27,13 @@
 ; number of "master" windows
 (define master-count 1)
 
+; the percent of the screen width dedicated to the master windows
+(define master-width 50)
+
 (define (arrange-client client x y width height)
   (move-client client x y)
   (resize-client client width height)
   (map-client client))
-
-(define (first-n l n) 
-  (let ((res (list))) 
-    (do ((idx 0 (+ idx 1))) 
-	((= idx n) (reverse res)) 
-      (set! res (cons (list-ref l idx) res)))))
-
-(define (rest-n l n)
-  (cond
-   ((> n (length l)) (list))
-   ((= n 0) l)
-   (#t (rest-n (cdr l) (- n 1)))))
 
 (define (split-vertical-iter clients x width increment cur)
   (arrange-client (car clients) x (+ cur 1) width (- increment 2))
@@ -51,30 +42,33 @@
       (split-vertical-iter (cdr clients) x width increment (+ cur increment))))
 
 (define (split-vertical clients x width)
-  (let ((increment (floor (/ (screen-height) (length clients)))))
-    (split-vertical-iter clients x width increment 0)))
+  (if (> (length clients) 0)
+      (let ((increment (floor (/ (screen-height) (length clients)))))
+        (split-vertical-iter clients x width increment 0))))
 
 (define (arrange-hook)
   (let ((clients (all-clients))
 	(client-count (length (all-clients)))
-	(half-screen-width (floor (/ (screen-width) 2))))
+	(master-screen-width (floor (* (screen-width) (/ master-width 100)))))
     (cond
      ((= client-count 1) (arrange-client (car clients)
 					 1 1
 					 (- (screen-width) 2)
 					 (- (screen-height) 2)))
      ((> client-count 1)
-      (split-vertical (first-n clients master-count)
-		      1 (- half-screen-width 2))
-      (split-vertical (rest-n clients master-count)
-		      (+ half-screen-width 1) (- half-screen-width 2))))))
+      (split-vertical
+       (list-head clients (min client-count master-count))
+       1 (- master-screen-width 2))
+      (split-vertical
+       (list-tail clients (min client-count master-count))
+       (+ master-screen-width 1) (- master-screen-width 2))))))
 
 (define (add-master)
   (set! master-count (+ master-count 1))
   (arrange-hook))
 
 (define (remove-master)
-  (if (> master-count 0)
+  (if (> master-count 1)
       (set! master-count (- master-count 1)))
   (arrange-hook))
 
