@@ -1,4 +1,5 @@
 /* nwm - a programmable window manager
+ * Copyright (C) 2013 Brandon Invergo
  * Copyright (C) 2010-2012  Nathan Sullivan
  *
  * This program is free software; you can redistribute it and/or 
@@ -26,6 +27,8 @@
 #include <xcb/xcb_aux.h>
 #include <xcb/xcb_keysyms.h>
 #include <xcb/xinerama.h>
+#include <xcb/xcb_atom.h>
+#include <xcb/xcb_icccm.h>
 #include <libguile.h>
 
 #include "event.h"
@@ -83,6 +86,8 @@ SGLIB_DEFINE_LIST_PROTOTYPES(keybinding_t, COMPARE_KEYBINDING, next)
 
 void update_client_geometry(client_t *);
 void map_client(client_t *);
+void destroy_client(client_t *);
+xcb_atom_t get_atom(char *);
 client_t *find_client(xcb_window_t);
 int bind_key(xcb_key_but_mask_t, xcb_keysym_t, SCM);
 

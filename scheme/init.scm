@@ -83,6 +83,9 @@
 (define (focus-prev)
   (focus-client (prev-client (get-focus-client))))
 
+(define (close)
+  (destroy-client (get-focus-client)))
+
 (define (launch-term)
   (launch-program term-program))
 
@@ -106,3 +109,6 @@
 
 ; quit nwm, ctrl-shift-q
 (bind-key 5 (string->number "71" 16) nwm-stop)
+
+; close window, ctrl-shift-c
+(bind-key 5 (string->number "63" 16) close)

@@ -1,4 +1,5 @@
 /* nwm - a programmable window manager
+ * Copyright (C) 2013 Brandon Invergo
  * Copyright (C) 2010-2012  Nathan Sullivan
  *
  * This program is free software; you can redistribute it and/or 
@@ -31,6 +32,8 @@
 #include <xcb/xcb_aux.h>
 #include <xcb/xcb_keysyms.h>
 #include <xcb/xinerama.h>
+#include <xcb/xcb_atom.h>
+#include <xcb/xcb_icccm.h>
 
 #define XK_MISCELLANY
 #define XK_LATIN1
@@ -260,6 +263,44 @@ void map_client(client_t *client)
     /* the map won't happen immediately unless we flush the connection */
     xcb_flush(wm_conf.connection);
 }
+
+void destroy_client(client_t *client)
+{
+    xcb_get_property_cookie_t cookie;
+    xcb_icccm_get_wm_protocols_reply_t protocols;
+    xcb_atom_t del_win_atom;
+    xcb_atom_t win_prot_atom;
+    uint32_t i;
+    int delete = 0;
+    
+    del_win_atom = get_atom("WM_DELETE_WINDOW");
+    win_prot_atom = get_atom("WM_PROTOCOLS");
+    cookie = xcb_icccm_get_wm_protocols_unchecked(wm_conf.connection, client->window,
+                                                  win_prot_atom);
+    if (xcb_icccm_get_wm_protocols_reply(wm_conf.connection, cookie, &protocols,
+                                         NULL) == 1) {
+        for (i = 0; i < protocols.atoms_len; i++)
+            if (protocols.atoms[i] == del_win_atom)
+                delete = 1;
+    }
+    xcb_icccm_get_wm_protocols_reply_wipe(&protocols);
+    if (delete == 1) {
+        xcb_client_message_event_t ev = {
+            .response_type = XCB_CLIENT_MESSAGE,
+            .format = 32,
+            .sequence = 0,
+            .window = client->window,
+            .type = win_prot_atom,
+            .data.data32 = { del_win_atom, XCB_CURRENT_TIME }
+        };
+        xcb_send_event(wm_conf.connection, 0, client->window, XCB_EVENT_MASK_NO_EVENT,
+                       (char *) &ev);
+    }
+    else
+        xcb_kill_client(wm_conf.connection, client->window);
+    xcb_flush(wm_conf.connection);
+}
+
 
 /* Use the geometry data from client structure to configure the X window */
 void update_client_geometry(client_t *client)
@@ -497,7 +538,22 @@ void set_exclusive_error_handler(xcb_event_handlers_t *handlers, xcb_generic_err
         xcb_event_set_error_handler(handlers, i, handler, NULL);
 }
 
+xcb_atom_t get_atom(char *atom_name)
+{
+    xcb_intern_atom_cookie_t atom_cookie;
+    xcb_atom_t atom;
+    xcb_intern_atom_reply_t *reply;
 
+    atom_cookie = xcb_intern_atom(wm_conf.connection, 0, strlen(atom_name), atom_name);
+    reply = xcb_intern_atom_reply(wm_conf.connection, atom_cookie, NULL);
+    if (reply != NULL) {
+        atom = reply->atom;
+        free(reply);
+        return atom;
+    }
+
+    return 0;
+}
 
 void scan_windows(void)
 {

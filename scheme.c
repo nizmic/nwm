@@ -85,6 +85,13 @@ static SCM scm_map_client(SCM client_smob)
     return SCM_UNSPECIFIED;
 }
 
+static SCM scm_destroy_client(SCM client_smob)
+{
+    client_t *client = (client_t *)SCM_SMOB_DATA(client_smob);
+    destroy_client(client);
+    return SCM_UNSPECIFIED;
+}
+
 static SCM scm_client_x(SCM client_smob)
 {
     client_t *client = (client_t *)SCM_SMOB_DATA(client_smob);
@@ -308,6 +315,7 @@ void *init_scheme(void *data)
     scm_c_define_gsubr("move-client", 3, 0, 0, &scm_move_client);
     scm_c_define_gsubr("resize-client", 3, 0, 0, &scm_resize_client);
     scm_c_define_gsubr("map-client", 1, 0, 0, &scm_map_client);
+    scm_c_define_gsubr("destroy-client", 1, 0, 0, &scm_destroy_client);
     scm_c_define_gsubr("dump-client", 1, 0, 0, &scm_dump_client);
     scm_c_define_gsubr("client-x", 1, 0, 0, &scm_client_x);
     scm_c_define_gsubr("client-y", 1, 0, 0, &scm_client_y);
