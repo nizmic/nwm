@@ -605,6 +605,8 @@ void scan_windows(void)
         root_tree_replies[screen_idx] = xcb_query_tree_reply(wm_conf.connection,
                                                              root_tree_cookies[screen_idx],
                                                              NULL);
+        if (!root_tree_replies[screen_idx])
+            continue;
         wins = xcb_query_tree_children(root_tree_replies[screen_idx]);
         if (!wins)
             fprintf(stderr, "failed to get child tree for window %u\n", root_wins[screen_idx]);
@@ -886,6 +888,9 @@ int main(int argc, char **argv)
     fprintf(stderr, "entering event loop\n");
     event_loop();
 
+    xcb_set_input_focus(connection, XCB_NONE, XCB_INPUT_FOCUS_POINTER_ROOT,
+                        XCB_CURRENT_TIME);
+    xcb_flush(connection);
     xcb_disconnect(connection);
 
     return 0;
