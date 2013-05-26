@@ -264,15 +264,15 @@ static SCM scm_nwm_log(SCM msg)
     return SCM_UNSPECIFIED;
 }
 
-static SCM scm_launch_program(SCM path)
+static SCM scm_launch_program(SCM prog)
 {
     scm_dynwind_begin(0);
-    char *c_path = scm_to_locale_string(path);
+    char *c_path = scm_to_locale_string(scm_car(prog));
     scm_dynwind_free(c_path);
     fprintf(stderr, "launching program %s\n", c_path);
     pid_t pid = fork();
     if (pid == 0) {
-        if (execl(c_path, c_path, NULL) == -1) {
+      if (scm_is_false(scm_execlp(scm_car(prog), prog))) {
             perror("execl failed");
             exit(2);
         }
