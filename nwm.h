@@ -89,6 +89,7 @@ void map_client(client_t *);
 void destroy_client(client_t *);
 xcb_atom_t get_atom(char *);
 client_t *find_client(xcb_window_t);
+xcb_keysym_t get_keysym(char *);
 int bind_key(xcb_key_but_mask_t, xcb_keysym_t, SCM);
 void get_client_name(client_t *, char *);
 void border_test(void);

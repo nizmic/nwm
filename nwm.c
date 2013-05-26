@@ -34,6 +34,7 @@
 #include <xcb/xinerama.h>
 #include <xcb/xcb_atom.h>
 #include <xcb/xcb_icccm.h>
+#include <X11/keysymdef.h>
 
 #define XK_MISCELLANY
 #define XK_LATIN1
@@ -667,6 +668,37 @@ void xinerama_test(void)
         }
         free(r);
     }
+}
+
+xcb_keysym_t get_keysym(char *key)
+{
+    xcb_keysym_t keysym;
+    if (strlen(key) == 1)
+        keysym = (int)key[0];
+    else {
+        if (!strcmp(key, "Enter"))
+            keysym = XK_Return;
+        else if (!strcmp(key, "Backspace"))
+            keysym = XK_BackSpace;
+        else if (!strcmp(key, "Delete"))
+            keysym = XK_Delete;
+        else if (!strcmp(key, "Escape"))
+            keysym = XK_Escape;
+        else if (!strcmp(key, "Tab"))
+            keysym = XK_Tab;
+        else if (!strcmp(key, "Left"))
+            keysym = XK_Left;
+        else if (!strcmp(key, "Right"))
+            keysym = XK_Right;
+        else if (!strcmp(key, "Down"))
+            keysym = XK_Down;
+        else if (!strcmp(key, "Up"))
+            keysym = XK_Up;
+        else if (!strcmp(key, "Space"))
+            keysym = XK_space;
+    }
+    fprintf(stderr, "keysym: %d\n", keysym);
+    return keysym;
 }
 
 int bind_key(xcb_key_but_mask_t mod_mask, xcb_keysym_t keysym, SCM proc)

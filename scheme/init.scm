@@ -1,5 +1,6 @@
 ;;; Sample init.scm file for nwm
 ;;;
+;;; Copyright (C) 2013  Brandon Invergo
 ;;; Copyright (C) 2010-2012  Nathan Sullivan
 ;;;
 ;;; This program is free software; you can redistribute it and/or 
@@ -90,25 +91,25 @@
   (launch-program term-program))
 
 ; run arrange-hook when hit ctrl-spacebar
-(bind-key 4 (string->number "20" 16) arrange-hook)
+(bind-key 4 "Space" arrange-hook)
 
 ; add a master, ctrl-;
-(bind-key 4 (string->number "3B" 16) add-master)
+(bind-key 4 ";" add-master)
 
 ; remove a master, ctrl-'
-(bind-key 4 (string->number "27" 16) remove-master)
+(bind-key 4 "'" remove-master)
 
 ; focus next, ctrl-j
-(bind-key 4 (string->number "6A" 16) focus-next)
+(bind-key 4 "j" focus-next)
 
 ; focus prev, ctrl-k
-(bind-key 4 (string->number "6B" 16) focus-prev)
+(bind-key 4 "k" focus-prev)
 
 ; launch terminal, ctrl-enter
-(bind-key 4 (string->number "FF0D" 16) launch-term)
+(bind-key 4 "Enter" launch-term)
 
 ; quit nwm, ctrl-shift-q
-(bind-key 5 (string->number "71" 16) nwm-stop)
+(bind-key 5 "q" nwm-stop)
 
 ; close window, ctrl-shift-c
-(bind-key 5 (string->number "63" 16) close)
+(bind-key 5 "c" close)

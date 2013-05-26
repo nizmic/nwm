@@ -272,9 +272,21 @@ static SCM scm_screen_height(void)
     return scm_from_unsigned_integer(wm_conf.screen->height_in_pixels);
 }
 
-static SCM scm_bind_key(SCM mod_mask, SCM keysym, SCM proc)
+static SCM scm_bind_key(SCM mod_mask, SCM key, SCM proc)
 {
-    bind_key(scm_to_uint16(mod_mask), scm_to_uint32(keysym), proc);
+    xcb_keysym_t keysym;
+    if (scm_is_true(scm_number_p(key)))
+        keysym = scm_to_uint32(key);
+    else if (scm_is_true(scm_string_p(key))) {
+        scm_dynwind_begin(0);
+        char *c_key = scm_to_locale_string(key);
+        scm_dynwind_free(c_key);
+        keysym = get_keysym(c_key);
+        scm_dynwind_end();
+    }
+    else
+        return SCM_UNSPECIFIED;
+    bind_key(scm_to_uint16(mod_mask), keysym, proc);
     return SCM_UNSPECIFIED;
 }
 
