@@ -1,4 +1,5 @@
 /* nwm - a programmable window manager
+ * Copyright (C) 2013 Brandon Invergo
  * Copyright (C) 2010-2012  Nathan Sullivan
  *
  * This program is free software; you can redistribute it and/or 
@@ -193,6 +194,22 @@ static SCM scm_dump_client(SCM client_smob)
     return SCM_UNSPECIFIED;
 }
 
+static SCM scm_get_client_name(SCM client_smob)
+{
+    client_t *client = NULL;
+    /* sort of arbitrary name length limit */
+    char name_buf[256];
+    SCM scm_name = SCM_UNSPECIFIED;
+    if (scm_is_eq(client_smob, SCM_UNSPECIFIED))
+        return SCM_UNSPECIFIED;
+    client = (client_t *)SCM_SMOB_DATA(client_smob);
+    if (!client)
+        return SCM_UNSPECIFIED;
+    get_client_name(client, name_buf);
+    scm_name = scm_from_locale_string(name_buf);
+    return scm_name;
+}
+
 static SCM scm_get_focus_client(void)
 {
     client_t *focus_client = get_focus_client();
@@ -329,6 +346,7 @@ void *init_scheme(void *data)
 
     scm_c_define_gsubr("get-focus-client", 0, 0, 0, &scm_get_focus_client);
     scm_c_define_gsubr("focus-client", 1, 0, 0, &scm_focus_client);
+    scm_c_define_gsubr("get-client-name", 1, 0, 0, &scm_get_client_name);
 
     scm_c_define_gsubr("launch-program", 1, 0, 0, &scm_launch_program);
 

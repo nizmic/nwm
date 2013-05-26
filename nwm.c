@@ -382,11 +382,37 @@ void fallback_arrange(void)
     }
 }
 
+void get_client_name(client_t *client, char *name_out)
+{
+    xcb_get_property_cookie_t c;
+    xcb_get_property_reply_t *r;
+    char *name = "";
+    int res;
+    int len = 0;
+
+    c = xcb_icccm_get_wm_name(wm_conf.connection, client->window);
+    res = xcb_icccm_get_wm_name_reply(wm_conf.connection, c, &r, NULL);
+    if (res == 1) {
+        len = xcb_get_property_value_length(r);
+        if (len > 0)
+            name = (char *)xcb_get_property_value(r);
+        /* sort of arbitrary name length limit (leaving one byte for
+         * the null character) */
+        if (len > 255)
+            len = 255;
+    }
+    else
+        fprintf(stderr, "failed to get wm_name\n");
+    free(r);
+    strncpy(name_out, name, len+1);
+}
+
 client_t *get_focus_client(void)
 {
     xcb_get_input_focus_cookie_t c = xcb_get_input_focus(wm_conf.connection);
     xcb_get_input_focus_reply_t *r = xcb_get_input_focus_reply(wm_conf.connection, c, NULL);
     client_t *focus_client = NULL;
+
     if (r) {
         focus_client = find_client(r->focus);
         free(r);
