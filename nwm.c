@@ -621,12 +621,18 @@ void scan_windows(void)
             child_win = wins[i];
             fprintf(stderr, "  child window %u\n", child_win);
             client_t *client = find_client(child_win);
-            if (!client) {
-                client = client_init(client_alloc());
-                client->window = child_win;
-                sglib_client_t_add(&client_list, client);
-            }
-            read_client_geometry(client);
+            /* TODO: verify that the following commented-out code is
+               not needed.  Keeping it causes phantom clients for some
+               background processes like dbus and pulseaudio started
+               from .xinitrc */
+
+            /* if (!client) { */
+            /*     client = client_init(client_alloc()); */
+            /*     client->window = child_win; */
+            /*     sglib_client_t_add(&client_list, client); */
+            /* } */
+            if (client)
+              read_client_geometry(client);
         }
     }
 
