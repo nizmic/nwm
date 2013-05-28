@@ -61,7 +61,7 @@
        1 (- master-screen-width 2))
       (split-vertical
        (list-tail clients (min client-count master-count))
-       (+ master-screen-width 1) (- master-screen-width 2))))))
+       (+ master-screen-width 1) (- (- (screen-width) master-screen-width) 2))))))
 
 (define (add-master)
   (set! master-count (+ master-count 1))
