@@ -19,49 +19,34 @@
 ;;; 02110-1301, USA 
 ;;;
 
+; load the auto-tiling routines
+(load "auto-tile.scm")
+
 ; path to terminal program
 (define term-program '("xterm"))
 ; you can supply arguments like so:
 ; (define term-program '("xterm" "-e" "screen"))
 
-; number of "master" windows
+; number of "master" windows in auto-tiling routines
 (define master-count 1)
 
 ; the percent of the screen width dedicated to the master windows
 (define master-width 50)
 
-(define (arrange-client client x y width height)
-  (move-client client x y)
-  (resize-client client width height)
-  (map-client client))
+; define the list of window arrangements you would like to use
+; (defined externally in auto-tile.scm
+(define arrangements (list auto-vtile auto-htile))
 
-(define (split-vertical-iter clients x width increment cur)
-  (arrange-client (car clients) x (+ cur 1) width (- increment 2))
-  (if (= (length clients) 1)
-      #t
-      (split-vertical-iter (cdr clients) x width increment (+ cur increment))))
+; use the first arrangement by default
+(define (arrange-hook) ((car arrangements)))
 
-(define (split-vertical clients x width)
-  (if (> (length clients) 0)
-      (let ((increment (floor (/ (screen-height) (length clients)))))
-        (split-vertical-iter clients x width increment 0))))
-
-(define (arrange-hook)
-  (let ((clients (all-clients))
-	(client-count (length (all-clients)))
-	(master-screen-width (floor (* (screen-width) (/ master-width 100)))))
-    (cond
-     ((= client-count 1) (arrange-client (car clients)
-					 1 1
-					 (- (screen-width) 2)
-					 (- (screen-height) 2)))
-     ((> client-count 1)
-      (split-vertical
-       (list-head clients (min client-count master-count))
-       1 (- master-screen-width 2))
-      (split-vertical
-       (list-tail clients (min client-count master-count))
-       (+ master-screen-width 1) (- (- (screen-width) master-screen-width) 2))))))
+; cycle through the arrangements
+(define (cycle-arrangement)
+  (begin
+    (set! arrangements (append (cdr arrangements)
+                               (list (car arrangements))))
+    (set! arrange-hook (lambda () ((car arrangements))))
+    (arrange-hook)))
 
 (define (add-master)
   (set! master-count (+ master-count 1))
@@ -96,6 +81,9 @@
 
 ; run arrange-hook when hit ctrl-spacebar
 (bind-key 4 "Space" arrange-hook)
+
+; cycle arrangements, ctrl-shift-space
+(bind-key 5 "Space" cycle-arrangement)
 
 ; add a master, ctrl-;
 (bind-key 4 ";" add-master)
