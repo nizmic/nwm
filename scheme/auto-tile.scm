@@ -92,5 +92,5 @@
     (if (equal? master focused)
         (client-list-swap focused (cadr (all-clients)))
         (client-list-swap focused master))
-    (focus-client (car (all-clients))))
-  (arrange-hook))
+    (arrange-hook)
+    (focus-client (car (all-clients)))))
