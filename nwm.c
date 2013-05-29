@@ -265,6 +265,12 @@ void map_client(client_t *client)
     xcb_flush(wm_conf.connection);
 }
 
+void unmap_client(client_t *client)
+{
+    xcb_unmap_window(wm_conf.connection, client->window);
+    xcb_flush(wm_conf.connection);
+}
+
 void destroy_client(client_t *client)
 {
     xcb_get_property_cookie_t cookie;
