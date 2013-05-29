@@ -111,3 +111,6 @@
 
 ; close window, ctrl-shift-c
 (bind-key 5 "c" close)
+
+; swap master window, ctrl-s
+(bind-key 5 "s" swap-master)

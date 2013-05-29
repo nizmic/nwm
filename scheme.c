@@ -53,12 +53,24 @@ static int print_client(SCM client_smob, SCM port, scm_print_state *pstate)
     return 1;
 }
 
+static int equalp_client(SCM client_smob1, SCM client_smob2)
+{
+    client_t *client1 = (client_t *)SCM_SMOB_DATA(client_smob1);
+    client_t *client2 = (client_t *)SCM_SMOB_DATA(client_smob2);
+
+    if (client1->window == client2->window)
+        return SCM_BOOL_T;
+    return SCM_BOOL_F;
+}
+    
+
 static void init_client_type(void)
 {
     client_tag = scm_make_smob_type("client", sizeof(client_t));
     scm_set_smob_mark(client_tag, mark_client);
     scm_set_smob_free(client_tag, free_client);
     scm_set_smob_print(client_tag, print_client);
+    scm_set_smob_equalp(client_tag, equalp_client);
 }
 
 static SCM scm_move_client(SCM client_smob, SCM x, SCM y)
@@ -142,6 +154,33 @@ static SCM scm_all_clients(void)
     return clients;
 }
 
+static SCM scm_client_list_reverse(void)
+{
+    sglib_client_t_reverse(&client_list);
+    return SCM_UNSPECIFIED;
+}
+
+static SCM scm_client_list_swap(SCM client1_smob, SCM client2_smob)
+{
+    client_t *client1 = (client_t *)SCM_SMOB_DATA(client1_smob);
+    client_t *client2 = (client_t *)SCM_SMOB_DATA(client2_smob);
+    rect_t temp_rect;
+    xcb_window_t temp_window;
+    uint16_t temp_border_width;
+
+    temp_rect = client1->rect;
+    temp_window = client1->window;
+    temp_border_width = client1->border_width;
+    client1->rect = client2->rect;
+    client1->window = client2->window;
+    client1->border_width = client2->border_width;
+    client2->rect = temp_rect;
+    client2->window = temp_window;
+    client2->border_width = temp_border_width;
+    
+    return SCM_UNSPECIFIED;
+}
+    
 static SCM scm_first_client(void)
 {
     SCM client;
@@ -338,6 +377,8 @@ void *init_scheme(void *data)
     scm_c_define_gsubr("first-client", 0, 0, 0, &scm_first_client);
     scm_c_define_gsubr("next-client", 1, 0, 0, &scm_next_client);
     scm_c_define_gsubr("prev-client", 1, 0, 0, &scm_prev_client);
+    scm_c_define_gsubr("client-list-reverse", 0, 0, 0, &scm_client_list_reverse);
+    scm_c_define_gsubr("client-list-swap", 2, 0, 0, &scm_client_list_swap);
 
     scm_c_define_gsubr("test-undefined", 0, 0, 0, &scm_test_undefined);
 

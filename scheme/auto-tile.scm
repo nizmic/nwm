@@ -85,3 +85,12 @@
       (split-horizontal
        (list-tail clients (min client-count master-count))
        (+ master-screen-height 1) (- (- (screen-height) master-screen-height) 2))))))
+
+(define (swap-master)
+  (let ((master (car (all-clients)))
+        (focused (get-focus-client)))
+    (if (equal? master focused)
+        (client-list-swap focused (cadr (all-clients)))
+        (client-list-swap focused master))
+    (focus-client (car (all-clients))))
+  (arrange-hook))
