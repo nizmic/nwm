@@ -194,7 +194,48 @@ static SCM eval_lisp(void *data)
 
 static SCM handle_lisp_error(void *data, SCM key, SCM parameters)
 {
-    fprintf(stderr, "LISP ERROR\n");
+    SCM param, plist, subparam;
+    char *param_str, key_str, eval_str;
+    fprintf(stderr, "Scheme exception caught:\n");
+    int i, j, len, n = scm_to_int(scm_length(parameters));
+    for (i=0; i<n; i++) {
+        param = scm_car(parameters);
+        if (scm_is_string(param)) {
+            param_str = scm_to_locale_string(param);
+            fprintf(stderr, "\t==> %s\n", param_str);
+        }
+        else if (scm_is_true(scm_list_p(param))) {
+            fprintf(stderr, "\t==> (");
+            plist = param;
+            len = scm_to_int(scm_length(plist));
+            for (j = 0; j < len; j++) {
+                subparam = scm_car(plist);
+                if (scm_is_string(subparam))
+                    fprintf(stderr, "%s", scm_to_locale_string(subparam));
+                else if (scm_is_integer(subparam))
+                        fprintf(stderr, "%d", scm_to_int(subparam));
+                else if (scm_is_symbol(subparam))
+                    fprintf(stderr, "%s", scm_to_locale_string(scm_symbol_to_string(subparam)));
+                if (j < len - 1)
+                    fprintf(stderr, " ");
+                plist = scm_cdr(plist);
+            }                    
+            fprintf(stderr, ")\n", param);
+        }
+        else if (scm_is_symbol(param))
+            fprintf(stderr, "\t==> %s\n", scm_to_locale_string(scm_symbol_to_string(param)));
+        else if (scm_is_integer(param))
+            fprintf(stderr, "\t==> %d\n", scm_to_int(param));
+        else if (scm_is_bool(param)) {
+            if (scm_is_true(param))
+                fprintf(stderr, "\t==> #t\n");
+            else
+                fprintf(stderr, "\t==> #f\n");
+        }
+        else
+            fprintf(stderr, "\t==> <unknown exception parameter>\n");
+        parameters = scm_cdr(parameters);
+    }
     return key;
 }
 
