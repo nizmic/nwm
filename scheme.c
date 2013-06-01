@@ -95,6 +95,15 @@ static SCM scm_map_client(SCM client_smob)
 {
     client_t *client = (client_t *)SCM_SMOB_DATA(client_smob);
     map_client(client);
+    run_hook("map-client-hook", scm_list_1(client_smob));
+    return SCM_UNSPECIFIED;
+}
+
+static SCM scm_unmap_client(SCM client_smob)
+{
+    client_t *client = (client_t *)SCM_SMOB_DATA(client_smob);
+    unmap_client(client);
+    run_hook("unmap-client-hook", scm_list_1(client_smob));
     return SCM_UNSPECIFIED;
 }
 
@@ -102,6 +111,7 @@ static SCM scm_destroy_client(SCM client_smob)
 {
     client_t *client = (client_t *)SCM_SMOB_DATA(client_smob);
     destroy_client(client);
+    run_hook("destroy-client-hook", scm_list_1(client_smob));
     return SCM_UNSPECIFIED;
 }
 
@@ -368,6 +378,22 @@ static SCM scm_trace_x_events(SCM status)
     return (wm_conf.trace_x_events ? SCM_BOOL_T : SCM_BOOL_F);
 }
 
+void run_hook(const char *hook_name, SCM args)
+{
+    SCM hook_symb = scm_from_utf8_symbol(hook_name);
+    SCM hook = scm_eval(hook_symb, scm_interaction_environment());
+    if (scm_is_false(scm_defined_p(hook_symb, SCM_UNDEFINED))) {
+        fprintf(stderr, "error: %s undefined\n", hook_name);
+        return;
+    }
+    else if (scm_is_false(scm_hook_p(hook))) {
+        fprintf(stderr, "error: %s is not a hook!\n", hook_name);
+        return;
+    }
+    if (scm_is_false(scm_hook_empty_p(hook)))
+        scm_run_hook(hook, args);
+}
+
 void *init_scheme(void *data)
 {
     scm_c_define_gsubr("nwm-stop", 0, 0, 0, &scm_nwm_stop);
@@ -385,6 +411,7 @@ void *init_scheme(void *data)
     scm_c_define_gsubr("move-client", 3, 0, 0, &scm_move_client);
     scm_c_define_gsubr("resize-client", 3, 0, 0, &scm_resize_client);
     scm_c_define_gsubr("map-client", 1, 0, 0, &scm_map_client);
+    scm_c_define_gsubr("unmap-client", 1, 0, 0, &scm_unmap_client);
     scm_c_define_gsubr("destroy-client", 1, 0, 0, &scm_destroy_client);
     scm_c_define_gsubr("dump-client", 1, 0, 0, &scm_dump_client);
     scm_c_define_gsubr("client-x", 1, 0, 0, &scm_client_x);
@@ -405,6 +432,10 @@ void *init_scheme(void *data)
 
     scm_c_define_gsubr("log", 1, 0, 0, &scm_nwm_log);
     scm_c_define_gsubr("trace-x-events", 1, 0, 0, &scm_trace_x_events);
+
+    scm_c_define("map-client-hook", scm_make_hook(scm_from_int(1)));
+    scm_c_define("unmap-client-hook", scm_make_hook(scm_from_int(1)));
+    scm_c_define("destroy-client-hook", scm_make_hook(scm_from_int(1)));
 
     init_client_type();
 
