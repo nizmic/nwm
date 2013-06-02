@@ -29,8 +29,6 @@
 #include "repl-server.h"
 #include "scheme.h"
 
-scm_t_bits client_tag;
-
 static SCM mark_client(SCM client_smob)
 {
     return SCM_BOOL_F;
@@ -53,7 +51,7 @@ static int print_client(SCM client_smob, SCM port, scm_print_state *pstate)
     return 1;
 }
 
-static int equalp_client(SCM client_smob1, SCM client_smob2)
+static SCM equalp_client(SCM client_smob1, SCM client_smob2)
 {
     client_t *client1 = (client_t *)SCM_SMOB_DATA(client_smob1);
     client_t *client2 = (client_t *)SCM_SMOB_DATA(client_smob2);
@@ -95,7 +93,6 @@ static SCM scm_map_client(SCM client_smob)
 {
     client_t *client = (client_t *)SCM_SMOB_DATA(client_smob);
     map_client(client);
-    run_hook("map-client-hook", scm_list_1(client_smob));
     return SCM_UNSPECIFIED;
 }
 
@@ -103,7 +100,6 @@ static SCM scm_unmap_client(SCM client_smob)
 {
     client_t *client = (client_t *)SCM_SMOB_DATA(client_smob);
     unmap_client(client);
-    run_hook("unmap-client-hook", scm_list_1(client_smob));
     return SCM_UNSPECIFIED;
 }
 
@@ -111,7 +107,6 @@ static SCM scm_destroy_client(SCM client_smob)
 {
     client_t *client = (client_t *)SCM_SMOB_DATA(client_smob);
     destroy_client(client);
-    run_hook("destroy-client-hook", scm_list_1(client_smob));
     return SCM_UNSPECIFIED;
 }
 
