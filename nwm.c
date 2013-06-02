@@ -182,11 +182,11 @@ int handle_destroy_notify_event(void *data, xcb_connection_t *c, xcb_destroy_not
     if (client) {
         fprintf(stderr, "destroy notify: removing client window %u\n", client->window);
         sglib_client_t_delete(&client_list, client);
-        free(client);
     }
     else {
         fprintf(stderr, "destroy notify: client window %u not found\n", event->window);
     }
+    destroy_client(client);
     return 0;
 }
 
@@ -274,7 +274,7 @@ void unmap_client(client_t *client)
     xcb_unmap_window(wm_conf.connection, client->window);
     xcb_flush(wm_conf.connection);
     client_smob = scm_new_smob(client_tag, (scm_t_bits) client);
-    /* run_hook("unmap-client-hook", scm_list_1(client_smob)); */
+    run_hook("unmap-client-hook", scm_list_1(client_smob));
 }
 
 void destroy_client(client_t *client)
@@ -316,7 +316,6 @@ void destroy_client(client_t *client)
     client_smob = scm_new_smob(client_tag, (scm_t_bits) client);
     run_hook("destroy-client-hook", scm_list_1(client_smob));
 }
-
 
 /* Use the geometry data from client structure to configure the X window */
 void update_client_geometry(client_t *client)
