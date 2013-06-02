@@ -182,11 +182,11 @@ int handle_destroy_notify_event(void *data, xcb_connection_t *c, xcb_destroy_not
     if (client) {
         fprintf(stderr, "destroy notify: removing client window %u\n", client->window);
         sglib_client_t_delete(&client_list, client);
+        destroy_client(client);
     }
     else {
         fprintf(stderr, "destroy notify: client window %u not found\n", event->window);
     }
-    destroy_client(client);
     return 0;
 }
 
