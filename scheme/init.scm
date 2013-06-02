@@ -38,24 +38,21 @@
 (define arrangements (list auto-vtile auto-htile))
 (define (arrange-clients) ((car arrangements)))
 
-(add-hook! map-client-hook draw-border)
 (add-hook! map-client-hook focus-client)
 (add-hook! map-client-hook (lambda (client)
                              (arrange-clients)))
 
-(add-hook! unmap-client-hook draw-border)
 (add-hook! unmap-client-hook (lambda (client)
                                (focus-client (next-client client))))
 (add-hook! unmap-client-hook (lambda (client)
                                (arrange-clients)))
 
 (add-hook! destroy-client-hook (lambda (client)
-                                 (if (> 0 (length (all-clients)))
-                                     (draw-border (get-focus-client)))))
-(add-hook! destroy-client-hook (lambda (client)
                                  (focus-client (next-client client))))
 (add-hook! destroy-client-hook (lambda (client)
                                  (arrange-clients)))
+
+(add-hook! focus-client-hook draw-border)
 
 ; cycle through the arrangements
 (define (cycle-arrangement)

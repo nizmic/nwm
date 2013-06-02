@@ -283,7 +283,6 @@ static SCM scm_focus_client(SCM client_smob)
         return SCM_UNSPECIFIED;
 
     set_focus_client(client);
-    draw_border(client);
     return SCM_UNSPECIFIED;
 }
 
@@ -439,6 +438,7 @@ void *init_scheme(void *data)
     scm_c_define("map-client-hook", scm_make_hook(scm_from_int(1)));
     scm_c_define("unmap-client-hook", scm_make_hook(scm_from_int(1)));
     scm_c_define("destroy-client-hook", scm_make_hook(scm_from_int(1)));
+    scm_c_define("focus-client-hook", scm_make_hook(scm_from_int(1)));
 
     init_client_type();
 

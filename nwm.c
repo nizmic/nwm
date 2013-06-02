@@ -403,6 +403,7 @@ client_t *get_focus_client(void)
 
 void set_focus_client(client_t *client)
 {
+    SCM client_smob;
     xcb_void_cookie_t c = xcb_set_input_focus_checked(wm_conf.connection, 
                                                       XCB_INPUT_FOCUS_POINTER_ROOT,
                                                       client->window,
@@ -413,6 +414,8 @@ void set_focus_client(client_t *client)
                 xcb_event_get_error_label(e->error_code));
         free(e);
     }
+    client_smob = scm_new_smob(client_tag, (scm_t_bits) client);
+    run_hook("focus-client-hook", scm_list_1(client_smob));
 }
 
 client_t *manage_window(xcb_window_t window)
