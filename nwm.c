@@ -118,11 +118,15 @@ client_t * find_client(xcb_window_t win)
     return NULL;
 }
 
+void clear_root(void)
+{
+    xcb_aux_clear_window(wm_conf.connection, wm_conf.screen->root);
+    xcb_map_window(wm_conf.connection, wm_conf.screen->root);
+    xcb_flush(wm_conf.connection);
+}
+
 void draw_border(client_t *client, uint32_t color, int width)
 {
-    /* Clear root window to erase any old borders */
-    xcb_aux_clear_window(wm_conf.connection, wm_conf.screen->root);
-
     xcb_gcontext_t color_context = xcb_generate_id(wm_conf.connection);
     uint32_t mask = XCB_GC_FOREGROUND;
     uint32_t value[] = { color };
