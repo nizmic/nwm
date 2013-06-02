@@ -365,40 +365,6 @@ void read_client_geometry(client_t *client)
     }
 }
 
-void fallback_arrange(void)
-{
-    int clients_len = sglib_client_t_len(client_list);
-    if (clients_len == 0)
-        return;
-    uint16_t screen_width = wm_conf.screen->width_in_pixels;
-    uint16_t screen_height = wm_conf.screen->height_in_pixels;
-    uint16_t client_width = screen_width / clients_len;
-    client_t *client = client_list;
-    int i = 0;
-
-    fprintf(stderr, "Fallback window arrangement is being used. You should define arrange-hook.\n");
-
-    while (i < clients_len) {
-        client->rect.x = i * client_width;
-        client->rect.y = 0;
-        client->rect.width = client_width;
-        client->rect.height = screen_height;
-        client->border_width = 0;
-        update_client_geometry(client);
-        ++i;
-        client = client->next;
-    }
-
-    client_t *focus_client = get_focus_client();
-    if (focus_client) {
-        draw_border(focus_client);
-    }
-    else if (client_list) {
-        set_focus_client(client_list);
-        draw_border(client_list);
-    }
-}
-
 void get_client_name(client_t *client, char *name_out)
 {
     xcb_get_property_cookie_t c;
@@ -448,25 +414,6 @@ void set_focus_client(client_t *client)
         fprintf(stderr, "xcb_set_input_focus_checked error: %s\n", 
                 xcb_event_get_error_label(e->error_code));
         free(e);
-    }
-}
-
-void run_arrange_hook(void)
-{
-    SCM arrange_hook_sym = scm_from_locale_symbol("arrange-hook");
-    if (scm_defined_p(arrange_hook_sym, SCM_UNDEFINED) == SCM_BOOL_T) {
-        scm_c_eval_string("(arrange-hook)");
-    }
-    else {
-        fallback_arrange();
-    }
-    client_t *focus_client = get_focus_client();
-    if (focus_client) {
-        draw_border(focus_client);
-    }
-    else if (client_list) {
-        set_focus_client(client_list);
-        draw_border(client_list);
     }
 }
 
