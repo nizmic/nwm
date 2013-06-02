@@ -1,4 +1,5 @@
 /* nwm - a programmable window manager
+ * Copyright (C) 2013  Brandon Invergo
  * Copyright (C) 2010-2012  Nathan Sullivan
  *
  * This program is free software; you can redistribute it and/or 
@@ -194,49 +195,78 @@ static SCM eval_lisp(void *data)
 
 static SCM handle_lisp_error(void *data, SCM key, SCM parameters)
 {
-    SCM param, plist, subparam;
-    char *param_str, key_str, eval_str;
-    fprintf(stderr, "Scheme exception caught:\n");
-    int i, j, len, n = scm_to_int(scm_length(parameters));
-    for (i=0; i<n; i++) {
+    SCM param;
+    fprintf(stderr, "==> Scheme exception caught (%s):  ",
+            scm_to_locale_string(scm_symbol_to_string(key)));
+    int i, len = scm_to_int(scm_length(parameters));
+    char param_str[2048];
+    /* TODO: properly handle exceptions on a per-key basis.  Right
+       now, we simply print out the parameters. This can be made to be
+       much better. */
+    for (i=0; i<len; i++) {
         param = scm_car(parameters);
-        if (scm_is_string(param)) {
-            param_str = scm_to_locale_string(param);
-            fprintf(stderr, "\t==> %s\n", param_str);
-        }
-        else if (scm_is_true(scm_list_p(param))) {
-            fprintf(stderr, "\t==> (");
-            plist = param;
-            len = scm_to_int(scm_length(plist));
-            for (j = 0; j < len; j++) {
-                subparam = scm_car(plist);
-                if (scm_is_string(subparam))
-                    fprintf(stderr, "%s", scm_to_locale_string(subparam));
-                else if (scm_is_integer(subparam))
-                        fprintf(stderr, "%d", scm_to_int(subparam));
-                else if (scm_is_symbol(subparam))
-                    fprintf(stderr, "%s", scm_to_locale_string(scm_symbol_to_string(subparam)));
-                if (j < len - 1)
-                    fprintf(stderr, " ");
-                plist = scm_cdr(plist);
-            }                    
-            fprintf(stderr, ")\n", param);
-        }
-        else if (scm_is_symbol(param))
-            fprintf(stderr, "\t==> %s\n", scm_to_locale_string(scm_symbol_to_string(param)));
-        else if (scm_is_integer(param))
-            fprintf(stderr, "\t==> %d\n", scm_to_int(param));
-        else if (scm_is_bool(param)) {
-            if (scm_is_true(param))
-                fprintf(stderr, "\t==> #t\n");
-            else
-                fprintf(stderr, "\t==> #f\n");
-        }
-        else
-            fprintf(stderr, "\t==> <unknown exception parameter>\n");
+        str_exception_param(param, param_str);
+        fprintf(stderr, "\%s ", param_str);
         parameters = scm_cdr(parameters);
     }
+    fprintf(stderr, "\n");
     return key;
+}
+
+void str_exception_param(SCM param, char *param_str){
+    SCM plist, subparam;
+    char *str;
+    char subparam_str[512];
+    char list_str[2048] = "(";
+    char int_str[8];
+    int param_int;
+    int j, len;
+    scm_dynwind_begin(0);
+    if (scm_is_string(param))
+        str = scm_to_locale_string(param);
+    else if (scm_is_symbol(param))
+        str = scm_to_locale_string(scm_symbol_to_string(param));
+    else if (scm_is_true(scm_procedure_p(param)))
+        str = scm_to_locale_string(scm_symbol_to_string(scm_procedure_name(param)));
+    else if (scm_is_integer(param)) {
+        param_int = scm_to_int(param);
+        sprintf(int_str, "%d", param_int);
+        str = int_str;
+    }
+    else if (scm_is_bool(param))
+        str = scm_is_true(param)?"#t":"#f";
+    else if (scm_is_keyword(param))
+        str = scm_to_locale_string(scm_symbol_to_string(scm_keyword_to_symbol(param)));
+    else if (scm_is_pair(param)) {
+        plist = param;
+        len = scm_to_int(scm_length(plist));
+        for (j = 0; j < len; j++) {
+            subparam = scm_car(plist);
+            str_exception_param(subparam, subparam_str);
+            if (strlen(list_str) == 2048)
+                continue;
+            else if (strlen(subparam_str) < 2048 - strlen(list_str))
+                str = strcat(list_str, subparam_str);
+            else {
+                str = strncat(list_str, subparam_str, 2047 - strlen(list_str));
+                str[2047] = '\0';
+            }
+            if (j < len - 1)
+                str = strcat(list_str, " ");
+            plist = scm_cdr(plist);
+        }
+        if (strlen(list_str) < 2047)
+            str = strcat(list_str, ")");
+    }
+    else
+        str = "<unknown>";
+    if (strlen(param_str) < 2048)
+        strcpy(param_str, str);
+    else {
+        strncpy(param_str, str, 2047);
+        param_str[2047] = '\0';
+    }
+    scm_dynwind_free(str);
 }
 
 void repl_conn_eval_lisp(repl_conn_t *conn)
