@@ -97,6 +97,5 @@ void border_test(void);
 client_t *get_focus_client(void);
 void set_focus_client(client_t *);
 void draw_border(client_t *);
-void run_arrange_hook(void);
 
 #endif
