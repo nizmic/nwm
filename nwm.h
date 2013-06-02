@@ -96,6 +96,6 @@ void get_client_name(client_t *, char *);
 void border_test(void);
 client_t *get_focus_client(void);
 void set_focus_client(client_t *);
-void draw_border(client_t *, uint32_t);
+void draw_border(client_t *, uint32_t, int);
 
 #endif

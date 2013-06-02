@@ -134,14 +134,20 @@ static SCM scm_client_height(SCM client_smob)
     return scm_from_unsigned_integer(client->rect.height);
 }
 
-static SCM scm_draw_border(SCM client_smob, SCM color)
+static SCM scm_draw_border(SCM client_smob, SCM color, SCM width)
 {
     client_t *client = (client_t *)SCM_SMOB_DATA(client_smob);
     uint32_t color_uint;
-    if (scm_is_true(scm_is_integer)) {
+    int width_int;
+    if (scm_is_integer(color))
         color_uint = scm_to_uint32(color);
-        draw_border(client, color_uint);
-    }
+    else
+        color_uint = 0x6CA0A3;
+    if (scm_is_integer(width))
+        width_int = scm_to_int(width);
+    else
+        width_int = 1;
+    draw_border(client, color_uint, width_int);
     return SCM_UNSPECIFIED;
 }
 
@@ -429,7 +435,7 @@ void *init_scheme(void *data)
 
     scm_c_define_gsubr("bind-key", 3, 0, 0, &scm_bind_key);
 
-    scm_c_define_gsubr("draw-border", 2, 0, 0, &scm_draw_border);
+    scm_c_define_gsubr("draw-border", 3, 0, 0, &scm_draw_border);
     scm_c_define_gsubr("get-focus-client", 0, 0, 0, &scm_get_focus_client);
     scm_c_define_gsubr("focus-client", 1, 0, 0, &scm_focus_client);
     scm_c_define_gsubr("get-client-name", 1, 0, 0, &scm_get_client_name);

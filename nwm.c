@@ -118,7 +118,7 @@ client_t * find_client(xcb_window_t win)
     return NULL;
 }
 
-void draw_border(client_t *client, uint32_t color)
+void draw_border(client_t *client, uint32_t color, int width)
 {
     /* Clear root window to erase any old borders */
     xcb_aux_clear_window(wm_conf.connection, wm_conf.screen->root);
@@ -127,10 +127,10 @@ void draw_border(client_t *client, uint32_t color)
     uint32_t mask = XCB_GC_FOREGROUND;
     uint32_t value[] = { color };
     xcb_create_gc(wm_conf.connection, color_context, wm_conf.screen->root, mask, value);
-    xcb_rectangle_t rect[] = {{ client->rect.x - 2,
-                                client->rect.y - 2,
-                                client->rect.width + 4,
-                                client->rect.height + 4 }};
+    xcb_rectangle_t rect[] = {{ client->rect.x - (2 * width),
+                                client->rect.y - (2 * width),
+                                client->rect.width + (4 * width),
+                                client->rect.height + (4 * width) }};
 
     /* Draw the new border */
     xcb_poly_fill_rectangle(wm_conf.connection, wm_conf.screen->root, color_context, 1, rect);
