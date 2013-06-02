@@ -29,61 +29,61 @@
   (move-client client x y)
   (resize-client client width height))
 
-(define (split-vertical-iter clients x width increment cur)
-  (arrange-client (car clients) x (+ cur 1) width (- increment 2))
+(define (split-vertical-iter clients x width increment cur gap)
+  (arrange-client (car clients) x (+ cur gap) width (- increment (* 2 gap)))
   (if (= (length clients) 1)
       #t
-      (split-vertical-iter (cdr clients) x width increment (+ cur increment))))
+      (split-vertical-iter (cdr clients) x width increment (+ cur increment) gap)))
 
-(define (split-vertical clients x width)
+(define (split-vertical clients x width gap)
   (if (> (length clients) 0)
       (let ((increment (floor (/ (screen-height) (length clients)))))
-        (split-vertical-iter clients x width increment 0))))
+        (split-vertical-iter clients x width increment 0 gap))))
 
-(define (split-horizontal-iter clients y height increment cur)
-  (arrange-client (car clients) (+ cur 1) y (- increment 2) height)
+(define (split-horizontal-iter clients y height increment cur gap)
+  (arrange-client (car clients) (+ cur gap) y (- increment (* 2 gap)) height)
   (if (= (length clients) 1)
       #t
-      (split-horizontal-iter (cdr clients) y height increment (+ cur increment))))
+      (split-horizontal-iter (cdr clients) y height increment (+ cur increment) gap)))
 
-(define (split-horizontal clients y height)
+(define (split-horizontal clients y height gap)
   (if (> (length clients) 0)
       (let ((increment (floor (/ (screen-width) (length clients)))))
-        (split-horizontal-iter clients y height increment 0))))
+        (split-horizontal-iter clients y height increment 0 gap))))
 
-(define (auto-vtile)
+(define (auto-vtile gap)
   (let* ((clients (all-clients))
         (client-count (length clients))
         (master-screen-width (floor (* (screen-width) (/ master-perc 100)))))
     (cond
      ((= client-count 1) (arrange-client (car clients)
-                                         1 1
-                                         (- (screen-width) 2)
-                                         (- (screen-height) 2)))
+                                         gap gap
+                                         (- (screen-width) (* 2 gap))
+                                         (- (screen-height) (* 2 gap))))
      ((> client-count 1)
       (split-vertical
        (list-head clients (min client-count master-count))
-       1 (- master-screen-width 2))
+       gap (- master-screen-width (* 2 gap)) gap)
       (split-vertical
        (list-tail clients (min client-count master-count))
-       (+ master-screen-width 1) (- (- (screen-width) master-screen-width) 2))))))
+       (+ master-screen-width gap) (- (- (screen-width) master-screen-width) (* 2 gap)) gap)))))
 
-(define (auto-htile)
+(define (auto-htile gap)
   (let* ((clients (all-clients))
         (client-count (length clients))
         (master-screen-height (floor (* (screen-height) (/ master-perc 100)))))
     (cond
      ((= client-count 1) (arrange-client (car clients)
-                                         1 1
-                                         (- (screen-width) 2)
-                                         (- (screen-height) 2)))
+                                         gap gap
+                                         (- (screen-width) (* 2 gap))
+                                         (- (screen-height) (* 2 gap))))
      ((> client-count 1)
       (split-horizontal
        (list-head clients (min client-count master-count))
-       1 (- master-screen-height 2))
+       gap (- master-screen-height (* 2 gap)) gap)
       (split-horizontal
        (list-tail clients (min client-count master-count))
-       (+ master-screen-height 1) (- (- (screen-height) master-screen-height) 2))))))
+       (+ master-screen-height gap) (- (- (screen-height) master-screen-height) (* 2 gap)) gap)))))
 
 (define (swap-master)
   (let ((master (car (all-clients)))
