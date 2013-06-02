@@ -214,7 +214,7 @@ static SCM handle_lisp_error(void *data, SCM key, SCM parameters)
 }
 
 void str_exception_param(SCM param, char *param_str){
-    SCM plist, subparam;
+    SCM plist, subparam, temp;
     char *str;
     char subparam_str[512];
     char list_str[2048] = "(";
@@ -226,8 +226,13 @@ void str_exception_param(SCM param, char *param_str){
         str = scm_to_locale_string(param);
     else if (scm_is_symbol(param))
         str = scm_to_locale_string(scm_symbol_to_string(param));
-    else if (scm_is_true(scm_procedure_p(param)))
-        str = scm_to_locale_string(scm_symbol_to_string(scm_procedure_name(param)));
+    else if (scm_is_true(scm_procedure_p(param))) {
+        temp = scm_procedure_name(param);
+        if (scm_is_false(temp))
+            str = "<lambda>";
+        else
+            str = scm_to_locale_string(temp);
+    }
     else if (scm_is_integer(param)) {
         param_int = scm_to_int(param);
         sprintf(int_str, "%d", param_int);
