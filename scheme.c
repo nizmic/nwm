@@ -439,6 +439,7 @@ void *init_scheme(void *data)
     scm_c_define("unmap-client-hook", scm_make_hook(scm_from_int(1)));
     scm_c_define("destroy-client-hook", scm_make_hook(scm_from_int(1)));
     scm_c_define("focus-client-hook", scm_make_hook(scm_from_int(1)));
+    scm_c_define("update-client-hook", scm_make_hook(scm_from_int(1)));
 
     init_client_type();
 

@@ -320,6 +320,7 @@ void destroy_client(client_t *client)
 /* Use the geometry data from client structure to configure the X window */
 void update_client_geometry(client_t *client)
 {
+    SCM client_smob;
     uint16_t config_win_mask = 0;
     uint32_t config_win_vals[5];
 
@@ -341,6 +342,8 @@ void update_client_geometry(client_t *client)
     config_win_vals[4] = client->border_width;
 
     xcb_configure_window(wm_conf.connection, client->window, config_win_mask, config_win_vals);
+    client_smob = scm_new_smob(client_tag, (scm_t_bits) client);
+    run_hook("update-client-hook", scm_list_1(client_smob));
 }
 
 /* Read the X window geometry and record it in the client structure */
