@@ -139,6 +139,13 @@ static SCM scm_client_height(SCM client_smob)
     return scm_from_unsigned_integer(client->rect.height);
 }
 
+static SCM scm_draw_border(SCM client_smob)
+{
+    client_t *client = (client_t *)SCM_SMOB_DATA(client_smob);
+    draw_border(client);
+    return SCM_UNSPECIFIED;
+}
+
 static SCM scm_nwm_stop(void)
 {
     wm_conf.stop = true;
@@ -424,6 +431,7 @@ void *init_scheme(void *data)
 
     scm_c_define_gsubr("bind-key", 3, 0, 0, &scm_bind_key);
 
+    scm_c_define_gsubr("draw-border", 0, 0, 0, &scm_draw_border);
     scm_c_define_gsubr("get-focus-client", 0, 0, 0, &scm_get_focus_client);
     scm_c_define_gsubr("focus-client", 1, 0, 0, &scm_focus_client);
     scm_c_define_gsubr("get-client-name", 1, 0, 0, &scm_get_client_name);
