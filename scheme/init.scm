@@ -22,6 +22,8 @@
 ; load the auto-tiling routines
 (load "auto-tile.scm")
 
+(define border-color #x6CA0A3)
+
 ; path to terminal program
 (define term-program '("xterm"))
 ; you can supply arguments like so:

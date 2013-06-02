@@ -1,5 +1,5 @@
 /* nwm - a programmable window manager
- * Copyright (C) 2013 Brandon Invergo
+ * Copyright (C) 2013  Brandon Invergo
  * Copyright (C) 2010-2012  Nathan Sullivan
  *
  * This program is free software; you can redistribute it and/or 
@@ -118,24 +118,24 @@ client_t * find_client(xcb_window_t win)
     return NULL;
 }
 
-void draw_border(client_t *client)
+void draw_border(client_t *client, uint32_t color)
 {
     /* Clear root window to erase any old borders */
     xcb_aux_clear_window(wm_conf.connection, wm_conf.screen->root);
 
-    xcb_gcontext_t orange = xcb_generate_id(wm_conf.connection);
+    xcb_gcontext_t color_context = xcb_generate_id(wm_conf.connection);
     uint32_t mask = XCB_GC_FOREGROUND;
-    uint32_t value[] = { 0xffffa500 };
-    xcb_create_gc(wm_conf.connection, orange, wm_conf.screen->root, mask, value);
+    uint32_t value[] = { color };
+    xcb_create_gc(wm_conf.connection, color_context, wm_conf.screen->root, mask, value);
     xcb_rectangle_t rect[] = {{ client->rect.x - 2,
                                 client->rect.y - 2,
                                 client->rect.width + 4,
                                 client->rect.height + 4 }};
 
     /* Draw the new border */
-    xcb_poly_fill_rectangle(wm_conf.connection, wm_conf.screen->root, orange, 1, rect);
+    xcb_poly_fill_rectangle(wm_conf.connection, wm_conf.screen->root, color_context, 1, rect);
 
-    xcb_free_gc(wm_conf.connection, orange);
+    xcb_free_gc(wm_conf.connection, color_context);
     xcb_map_window(wm_conf.connection, wm_conf.screen->root);
     xcb_flush(wm_conf.connection);
 }
