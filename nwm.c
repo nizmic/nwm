@@ -183,7 +183,6 @@ int handle_destroy_notify_event(void *data, xcb_connection_t *c, xcb_destroy_not
         fprintf(stderr, "destroy notify: removing client window %u\n", client->window);
         sglib_client_t_delete(&client_list, client);
         free(client);
-        /* run_arrange_hook(); */
     }
     else {
         fprintf(stderr, "destroy notify: client window %u not found\n", event->window);
@@ -275,7 +274,7 @@ void unmap_client(client_t *client)
     xcb_unmap_window(wm_conf.connection, client->window);
     xcb_flush(wm_conf.connection);
     client_smob = scm_new_smob(client_tag, (scm_t_bits) client);
-    run_hook("unmap-client-hook", scm_list_1(client_smob));
+    /* run_hook("unmap-client-hook", scm_list_1(client_smob)); */
 }
 
 void destroy_client(client_t *client)
@@ -427,7 +426,6 @@ client_t *manage_window(xcb_window_t window)
     client->border_width = 0;
     update_client_geometry(client);
 
-    /* run_arrange_hook(); */
     map_client(client);
     return client;    
 }
@@ -454,10 +452,7 @@ int handle_map_request_event(void *data, xcb_connection_t *c, xcb_map_request_ev
     if (!client)
         client = manage_window(event->window);
 
-    /* xcb_map_window(c, event->window); */
     map_client(client);
-
-    /* run_arrange_hook(); */
 
     free(win_attrs_reply);
 
