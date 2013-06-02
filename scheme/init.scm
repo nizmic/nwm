@@ -137,4 +137,8 @@
 (bind-key 5 "c" close)
 
 ; swap master window, ctrl-s
-(bind-key 5 "s" swap-master)
+(bind-key 5 "s" (lambda ()
+                  (begin
+                    (swap-master)
+                    (arrange-clients))))
+
