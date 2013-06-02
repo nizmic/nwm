@@ -24,8 +24,8 @@
 
 ; window decoration and arrangement parameters
 (define border-color #x6CA0A3)
-(define border-width 2)
-(define gap 0)
+(define border-width 1)
+(define gap 1)
 
 ; path to terminal program
 (define term-program '("xterm"))
