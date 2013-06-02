@@ -25,7 +25,7 @@
 (define border-color #x2b2b2b)
 (define sel-border-color #x6CA0A3)
 (define border-width 1)
-(define gap 1)
+(define gap 2)
 
 ; path to terminal program
 (define term-program '("xterm"))
@@ -155,5 +155,6 @@
 (bind-key 5 "s" (lambda ()
                   (begin
                     (swap-master)
-                    (arrange-clients))))
+                    (arrange-clients)
+                    (draw-borders (all-clients)))))
 
