@@ -22,8 +22,8 @@
 ; load the auto-tiling routines
 (load "auto-tile.scm")
 
-; window decoration and arrangement parameters
-(define border-color #x6CA0A3)
+(define border-color #x2b2b2b)
+(define sel-border-color #x6CA0A3)
 (define border-width 1)
 (define gap 1)
 
@@ -58,7 +58,16 @@
                                  (arrange-clients)))
 
 (add-hook! focus-client-hook (lambda (client)
-                               (draw-border client border-color border-width)))
+                               (draw-borders (all-clients))))
+
+(define (draw-borders client-list)
+  (if (null? client-list)
+      (clear)
+      (begin
+        (draw-borders (cdr client-list))
+        (if (equal? (car client-list) (get-focus-client))
+            (draw-border (car client-list) sel-border-color border-width)
+            (draw-border (car client-list) border-color border-width)))))
 
 ; cycle through the arrangements
 (define (cycle-arrangement)
@@ -67,35 +76,35 @@
                                (list (car arrangements))))
     (set! arrange-clients (lambda () ((car arrangements) gap)))
     (arrange-clients)
-    (draw-border (get-focus-client) border-color border-width)))
+    (draw-borders (all-clients))))
 
 (define (add-master)
   (set! master-count (+ master-count 1))
   (arrange-clients)
-  (draw-border (get-focus-client) border-color border-width))
+  (draw-borders (all-clients)))
 
 (define (remove-master)
   (if (> master-count 1)
       (set! master-count (- master-count 1)))
   (arrange-clients)
-  (draw-border (get-focus-client) border-color border-width))
+  (draw-borders (all-clients)))
 
 (define (grow-master)
   (if (< master-perc 94)
       (set! master-perc (+ master-perc 5)))
   (arrange-clients)
-  (draw-border (get-focus-client) border-color border-width))
+  (draw-borders (all-clients)))
 
 (define (shrink-master)
   (if (>= master-perc 6)
       (set! master-perc (- master-perc 5)))
   (arrange-clients)
-  (draw-border (get-focus-client) border-color border-width))
+  (draw-borders (all-clients)))
 
 (define (reverse-clients)
   (client-list-reverse)
   (arrange-clients)
-  (draw-border (get-focus-client) border-color border-width))
+  (draw-borders (all-clients)))
 
 (define (focus-next)
   (focus-client (next-client (get-focus-client))))
