@@ -231,7 +231,7 @@ void str_exception_param(SCM param, char *param_str){
         if (scm_is_false(temp))
             str = "<lambda>";
         else
-            str = scm_to_locale_string(temp);
+            str = scm_to_locale_string(scm_symbol_to_string(temp));
     }
     else if (scm_is_integer(param)) {
         param_int = scm_to_int(param);
