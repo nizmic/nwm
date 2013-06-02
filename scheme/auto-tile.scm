@@ -27,8 +27,7 @@
 
 (define (arrange-client client x y width height)
   (move-client client x y)
-  (resize-client client width height)
-  (map-client client))
+  (resize-client client width height))
 
 (define (split-vertical-iter clients x width increment cur)
   (arrange-client (car clients) x (+ cur 1) width (- increment 2))
@@ -53,8 +52,8 @@
         (split-horizontal-iter clients y height increment 0))))
 
 (define (auto-vtile)
-  (let ((clients (all-clients))
-        (client-count (length (all-clients)))
+  (let* ((clients (all-clients))
+        (client-count (length clients))
         (master-screen-width (floor (* (screen-width) (/ master-perc 100)))))
     (cond
      ((= client-count 1) (arrange-client (car clients)
@@ -70,8 +69,8 @@
        (+ master-screen-width 1) (- (- (screen-width) master-screen-width) 2))))))
 
 (define (auto-htile)
-  (let ((clients (all-clients))
-        (client-count (length (all-clients)))
+  (let* ((clients (all-clients))
+        (client-count (length clients))
         (master-screen-height (floor (* (screen-height) (/ master-perc 100)))))
     (cond
      ((= client-count 1) (arrange-client (car clients)
@@ -92,5 +91,4 @@
     (if (equal? master focused)
         (client-list-swap focused (cadr (all-clients)))
         (client-list-swap focused master))
-    (arrange-hook)
     (focus-client (car (all-clients)))))

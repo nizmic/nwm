@@ -36,36 +36,63 @@
 ; define the list of window arrangements you would like to use
 ; (defined externally in auto-tile.scm
 (define arrangements (list auto-vtile auto-htile))
+(define (arrange-clients) ((car arrangements)))
 
-; use the first arrangement by default
-(define (arrange-hook) ((car arrangements)))
+(add-hook! map-client-hook draw-border)
+(add-hook! map-client-hook focus-client)
+(add-hook! map-client-hook (lambda (client)
+                             (arrange-clients)))
+
+(add-hook! unmap-client-hook draw-border)
+(add-hook! unmap-client-hook (lambda (client)
+                               (focus-client (next-client client))))
+(add-hook! unmap-client-hook (lambda (client)
+                               (arrange-clients)))
+
+(add-hook! destroy-client-hook (lambda (client)
+                                 (if (> 0 (length (all-clients)))
+                                     (draw-border (get-focus-client)))))
+(add-hook! destroy-client-hook (lambda (client)
+                                 (focus-client (next-client client))))
+(add-hook! destroy-client-hook (lambda (client)
+                                 (arrange-clients)))
 
 ; cycle through the arrangements
 (define (cycle-arrangement)
   (begin
     (set! arrangements (append (cdr arrangements)
                                (list (car arrangements))))
-    (set! arrange-hook (lambda () ((car arrangements))))
-    (arrange-hook)))
+    (set! arrange-clients (lambda () ((car arrangements))))
+    (arrange-clients)
+    (draw-border (get-focus-client))))
 
 (define (add-master)
   (set! master-count (+ master-count 1))
-  (arrange-hook))
+  (arrange-clients)
+  (draw-border (get-focus-client)))
 
 (define (remove-master)
   (if (> master-count 1)
       (set! master-count (- master-count 1)))
-  (arrange-hook))
+  (arrange-clients)
+  (draw-border (get-focus-client)))
 
 (define (grow-master)
-  (if (< master-width 94)
-      (set! master-width (+ master-width 5)))
-  (arrange-hook))
+  (if (< master-perc 94)
+      (set! master-perc (+ master-perc 5)))
+  (arrange-clients)
+  (draw-border (get-focus-client)))
 
 (define (shrink-master)
-  (if (>= master-width 6)
-      (set! master-width (- master-width 5)))
-  (arrange-hook))
+  (if (>= master-perc 6)
+      (set! master-perc (- master-perc 5)))
+  (arrange-clients)
+  (draw-border (get-focus-client)))
+
+(define (reverse-clients)
+  (client-list-reverse)
+  (arrange-clients)
+  (draw-border (get-focus-client)))
 
 (define (focus-next)
   (focus-client (next-client (get-focus-client))))
