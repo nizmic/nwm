@@ -423,9 +423,9 @@ void set_focus_client(client_t *client)
                 xcb_event_get_error_label(e->error_code));
         free(e);
     }
-    client_smob = scm_new_smob(client_tag, (scm_t_bits) client);
     xcb_configure_window(wm_conf.connection, client->window,
                          XCB_CONFIG_WINDOW_STACK_MODE, values);
+    client_smob = scm_new_smob(client_tag, (scm_t_bits) client);
     run_hook("focus-client-hook", scm_list_1(client_smob));
 }
 
