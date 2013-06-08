@@ -90,6 +90,20 @@
        (list-tail clients (min client-count master-count))
        (+ master-screen-height gap) (- (- (screen-height) master-screen-height) (* 2 gap)) gap)))))
 
+(define (arrange-fullscreen clients gap)
+  (if (= (length clients) 0)
+      #t
+      (if (arrange-fullscreen (cdr clients) gap)
+          (arrange-client (car clients)
+                          gap gap
+                          (- (screen-width) (* 2 gap))
+                          (- (screen-height) (* 2 gap))))))
+
+(define (auto-fullscreen gap)
+  (let ((clients (all-clients)))
+    (if (> (length clients) 0)
+        (arrange-fullscreen clients gap))))
+
 ;; New hooks
 (define auto-tile-hook (make-hook 1))
 
@@ -107,7 +121,7 @@
 (define border-width 1)
 
 ; list of all available arrangements
-(define auto-tile-arrangements (list auto-vtile auto-htile))
+(define auto-tile-arrangements (list auto-vtile auto-htile auto-fullscreen))
 
 ; the currently used arrangements
 (define auto-tile-arrangement (car auto-tile-arrangements))
@@ -126,7 +140,6 @@
                                          (list (car auto-tile-arrangements))))
     (set! auto-tile-arrangement (car auto-tile-arrangements))
     (auto-tile)))
-
 
 ; swap the master client with another client
 (define (swap-master)
@@ -149,15 +162,15 @@
   (auto-tile))
 
 ; grow the master area
-(define (grow-master)
-  (if (< master-perc 94)
-      (set! master-perc (+ master-perc 5)))
+(define (grow-master amount)
+  (if (< master-perc (- 100 (+ amount 1)))
+      (set! master-perc (+ master-perc amount)))
   (auto-tile))
 
 ; shrink the master area
-(define (shrink-master)
-  (if (>= master-perc 6)
-      (set! master-perc (- master-perc 5)))
+(define (shrink-master amount)
+  (if (>= master-perc (+ amount 1))
+      (set! master-perc (- master-perc amount)))
   (auto-tile))
 
 ;; Set up hooks
@@ -186,10 +199,12 @@
 (bind-key 64 "d" remove-master)
 
 ; grow master, mod4-l
-(bind-key 64 "l" grow-master)
+(bind-key 64 "l" (lambda ()
+                   (grow-master 5)))
 
 ; shrink master, mod4-h
-(bind-key 64 "h" shrink-master)
+(bind-key 64 "h" (lambda ()
+                   (shrink-master 5)))
 
 ; cycle arrangements, mod4-shift-space
 (bind-key 65 "Space" auto-tile-cycle-arrangement)

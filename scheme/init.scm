@@ -33,20 +33,33 @@
 ; (define term-program '("xterm" "-e" "screen"))
 
 ; window borders
-(define border-color #x2b2b2b)
-(define sel-border-color #x6CA0A3)
-(define (draw-borders client-list)
+(define norm-border-color #x2b2b2b)
+(define focus-border-color #x6CA0A3)
+
+(define (draw-norm-borders client-list color)
   (if (null? client-list)
       (clear)
       (begin
-        (draw-borders (cdr client-list))
-        (if (equal? (car client-list) (get-focus-client))
-            (draw-border (car client-list) sel-border-color border-width)
-            (draw-border (car client-list) border-color border-width)))))
+        (draw-norm-borders (cdr client-list) color)
+        (draw-border (car client-list) color border-width))))
 
+(define (draw-focus-border client color)
+  (draw-border client color border-width))
+
+(define (draw-borders client-list norm-color focus-color)
+  (let ((focused (get-focus-client)))
+    (begin
+      (draw-norm-borders client-list norm-color)
+      (if (not (unspecified? focused))
+          (draw-focus-border focused focus-color)))))
+
+; focus-client
 (add-hook! focus-client-hook (lambda (client)
-                               (draw-borders (all-clients))))
-(add-hook! auto-tile-hook draw-borders)
+                               (draw-borders (all-clients) norm-border-color
+                                             focus-border-color)))
+(add-hook! auto-tile-hook (lambda (clients)
+                            (draw-borders clients norm-border-color
+                                          focus-border-color)))
 
 (define (focus-next)
   (focus-client (next-client (get-focus-client))))
@@ -66,11 +79,21 @@
 ; focus prev, ctrl-k
 (bind-key 4 "k" focus-prev)
 
+; grow master, ctrl-l
+(bind-key 4 "l" (lambda ()
+                  (grow-master 5)))
+
+; shrink master, ctrl-h
+(bind-key 4 "h" (lambda ()
+                  (shrink-master 5)))
+
 ; launch terminal, ctrl-enter
 (bind-key 4 "Enter" launch-term)
 
-; quit nwm, ctrl-shift-q
-(bind-key 5 "q" nwm-stop)
+(bind-key 4 "s" (lambda ()
+                   (begin
+                     (swap-master)
+                     (auto-tile))))
 
 ; close window, ctrl-shift-c
 (bind-key 5 "c" close)
