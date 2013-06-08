@@ -416,12 +416,16 @@ void set_focus_client(client_t *client)
                                                       client->window,
                                                       XCB_CURRENT_TIME);
     xcb_generic_error_t *e = xcb_request_check(wm_conf.connection, c);
+    const static uint32_t values[] = {XCB_STACK_MODE_ABOVE};
+    
     if (e) {
         fprintf(stderr, "xcb_set_input_focus_checked error: %s\n", 
                 xcb_event_get_error_label(e->error_code));
         free(e);
     }
     client_smob = scm_new_smob(client_tag, (scm_t_bits) client);
+    xcb_configure_window(wm_conf.connection, client->window,
+                         XCB_CONFIG_WINDOW_STACK_MODE, values);
     run_hook("focus-client-hook", scm_list_1(client_smob));
 }
 
