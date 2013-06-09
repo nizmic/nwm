@@ -87,6 +87,7 @@ SGLIB_DEFINE_LIST_PROTOTYPES(keybinding_t, COMPARE_KEYBINDING, next)
 void update_client_geometry(client_t *);
 void map_client(client_t *);
 void unmap_client(client_t *);
+bool is_mapped(client_t *);
 void destroy_client(client_t *);
 xcb_atom_t get_atom(char *);
 client_t *find_client(xcb_window_t);

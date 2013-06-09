@@ -281,6 +281,21 @@ void unmap_client(client_t *client)
     run_hook("unmap-client-hook", scm_list_1(client_smob));
 }
 
+bool is_mapped(client_t *client)
+{
+    xcb_get_window_attributes_cookie_t cookie;
+    xcb_get_window_attributes_reply_t *reply;
+    cookie = xcb_get_window_attributes(wm_conf.connection, client->window);
+    reply = xcb_get_window_attributes_reply(wm_conf.connection, cookie, NULL);
+    if (!reply)
+        return 0;
+
+    if (reply->map_state == 0)
+        return false;
+    else
+        return true;
+}
+
 void destroy_client(client_t *client)
 {
     SCM client_smob;

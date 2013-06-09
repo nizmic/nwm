@@ -103,6 +103,17 @@ static SCM scm_unmap_client(SCM client_smob)
     return SCM_UNSPECIFIED;
 }
 
+static SCM scm_is_mapped(SCM client_smob)
+{
+    /* if (scm_equal_p(client_smob, SCM_UNSPECIFIED)) */
+    /*     return SCM_BOOL_F; */
+    client_t *client = (client_t *)SCM_SMOB_DATA(client_smob);
+    if (is_mapped(client))
+        return SCM_BOOL_T;
+    else
+        return SCM_BOOL_F;
+}
+
 static SCM scm_destroy_client(SCM client_smob)
 {
     client_t *client = (client_t *)SCM_SMOB_DATA(client_smob);
@@ -429,6 +440,7 @@ void *init_scheme(void *data)
     scm_c_define_gsubr("resize-client", 3, 0, 0, &scm_resize_client);
     scm_c_define_gsubr("map-client", 1, 0, 0, &scm_map_client);
     scm_c_define_gsubr("unmap-client", 1, 0, 0, &scm_unmap_client);
+    scm_c_define_gsubr("mapped?", 1, 0, 0, &scm_is_mapped);    
     scm_c_define_gsubr("destroy-client", 1, 0, 0, &scm_destroy_client);
     scm_c_define_gsubr("dump-client", 1, 0, 0, &scm_dump_client);
     scm_c_define_gsubr("client-x", 1, 0, 0, &scm_client_x);
