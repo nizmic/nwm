@@ -43,8 +43,9 @@ LDFLAGS = $(LIBS)
 
 objects = nwm.o repl-server.o scheme.o event.o nwm-repl.o
 bins = nwm nwm-repl
+scheme = init.scm auto-tile.scm tags.scm
 
-.PHONY: all build clean install uninstall
+.PHONY: all build clean install install-bin install-scheme uninstall
 
 all: build
 
@@ -53,12 +54,18 @@ build: $(bins)
 clean:
 	rm -vf $(bins) $(objects) 
 
-install: build
+install: build install-bin install-scheme
+
+install-bin:
 	$(MKDIR_P) $(bindir)
-	$(MKDIR_P) $(datadir)/nwm/scheme
 	$(INSTALL_BIN) nwm $(bindir)/nwm
 	$(INSTALL_BIN) nwm-repl $(bindir)/nwm-repl
-	$(INSTALL_DATA) scheme/init.scm $(datadir)/nwm/scheme/init.scm
+
+install-scheme:
+	$(MKDIR_P) $(datadir)/nwm/scheme
+	for s in $(scheme); do \
+		$(INSTALL_DATA) scheme/$$s $(datadir)/nwm/scheme/$$s; \
+	done
 
 uninstall:
 	-rm -rvf $(datadir)/nwm
