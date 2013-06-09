@@ -193,6 +193,21 @@ static SCM scm_all_clients(void)
     return clients;
 }
 
+static SCM scm_visible_clients(void)
+{
+    SCM clients = SCM_EOL;
+    SCM smob;
+    client_t *client = client_list;
+    while (client) {
+        if (is_mapped(client)) {
+            SCM_NEWSMOB(smob, client_tag, client);
+            clients = scm_append(scm_list_2(clients, scm_list_1(smob)));
+            client = client->next;
+        }
+    }
+    return clients;
+}
+
 static SCM scm_client_list_reverse(void)
 {
     sglib_client_t_reverse(&client_list);
@@ -428,6 +443,7 @@ void *init_scheme(void *data)
     scm_c_define_gsubr("count-clients", 0, 0, 0, &scm_count_clients);
 
     scm_c_define_gsubr("all-clients", 0, 0, 0, &scm_all_clients);
+    scm_c_define_gsubr("visible-clients", 0, 0, 0, &scm_visible_clients);
     scm_c_define_gsubr("first-client", 0, 0, 0, &scm_first_client);
     scm_c_define_gsubr("next-client", 1, 0, 0, &scm_next_client);
     scm_c_define_gsubr("prev-client", 1, 0, 0, &scm_prev_client);
