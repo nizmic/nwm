@@ -1,4 +1,5 @@
 /* nwm - a programmable window manager
+ * Copyright (C) 2013  Brandon Invergo
  * Copyright (C) 2010  Nathan Sullivan
  *
  * This program is free software; you can redistribute it and/or 
@@ -20,6 +21,9 @@
 #ifndef __SCHEME_H__
 #define __SCHEME_H__
 
+scm_t_bits client_tag;
+
 void *init_scheme(void *data);
+void run_hook(const char*, SCM);
 
 #endif

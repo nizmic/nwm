@@ -1,4 +1,5 @@
 /* nwm - a programmable window manager
+ * Copyright (C) 2013  Brandon Invergo
  * Copyright (C) 2010-2012  Nathan Sullivan
  *
  * This program is free software; you can redistribute it and/or 
@@ -22,6 +23,7 @@
 
 #include <sys/socket.h>
 #include <sys/un.h>
+#include <libguile.h>
 
 #define BUFSIZE 4096
 
@@ -53,5 +55,6 @@ repl_server_t *repl_server_init(void);
 void repl_server_step(repl_server_t *server);
 void init_io_buffer_ports(void);
 void load_init_scheme(void);
+void str_exception_param(SCM, char *);
 
 #endif
