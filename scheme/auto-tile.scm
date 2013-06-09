@@ -55,9 +55,8 @@
 
 ;; arrangement functions
 ; vertical tiling: a master area on the left and a vertical stack on the right
-(define (auto-vtile gap)
-  (let* ((clients (all-clients))
-        (client-count (length clients))
+(define (auto-vtile clients gap)
+  (let ((client-count (length clients))
         (master-screen-width (floor (* (screen-width) (/ master-perc 100)))))
     (cond
      ((= client-count 1) (arrange-client (car clients)
@@ -73,9 +72,8 @@
        (+ master-screen-width gap) (- (- (screen-width) master-screen-width) (* 2 gap)) gap)))))
 
 ; horizontal tiling: a master area on the top and a horizontal stack on the bottom
-(define (auto-htile gap)
-  (let* ((clients (all-clients))
-        (client-count (length clients))
+(define (auto-htile clients gap)
+  (let* ((client-count (length clients))
         (master-screen-height (floor (* (screen-height) (/ master-perc 100)))))
     (cond
      ((= client-count 1) (arrange-client (car clients)
@@ -90,19 +88,14 @@
        (list-tail clients (min client-count master-count))
        (+ master-screen-height gap) (- (- (screen-height) master-screen-height) (* 2 gap)) gap)))))
 
-(define (arrange-fullscreen clients gap)
+(define (auto-fullscreen clients gap)
   (if (= (length clients) 0)
       #t
-      (if (arrange-fullscreen (cdr clients) gap)
+      (if (auto-fullscreen (cdr clients) gap)
           (arrange-client (car clients)
                           gap gap
                           (- (screen-width) (* 2 gap))
                           (- (screen-height) (* 2 gap))))))
-
-(define (auto-fullscreen gap)
-  (let ((clients (all-clients)))
-    (if (> (length clients) 0)
-        (arrange-fullscreen clients gap))))
 
 ;; New hooks
 (define auto-tile-hook (make-hook 1))
@@ -128,10 +121,10 @@
 
 ;; User-facing procedures
 ; arrange the clients using the current arrangement procedure
-(define auto-tile (lambda ()
-                    (begin
-                      (auto-tile-arrangement gap)
-                      (run-hook auto-tile-hook (all-clients)))))
+(define (auto-tile clients)
+  (begin
+    (auto-tile-arrangement clients gap)
+    (run-hook auto-tile-hook clients)))
 
 ; cycle through the arrangements
 (define (auto-tile-cycle-arrangement)
@@ -139,57 +132,58 @@
     (set! auto-tile-arrangements (append (cdr auto-tile-arrangements)
                                          (list (car auto-tile-arrangements))))
     (set! auto-tile-arrangement (car auto-tile-arrangements))
-    (auto-tile)))
+    (auto-tile (visible-clients))))
 
 ; swap the master client with another client
 (define (swap-master)
-  (let ((master (car (all-clients)))
-        (focused (get-focus-client)))
+  (let* ((visible (visible-clients))
+         (master (car visible))
+         (focused (get-focus-client)))
     (if (equal? master focused)
-        (client-list-swap focused (cadr (all-clients)))
+        (client-list-swap focused (cadr visible))
         (client-list-swap focused master))
-    (focus-client (car (all-clients)))))
+    (focus-client (car visible))))
 
 ; add another client to the master area
 (define (add-master)
   (set! master-count (+ master-count 1))
-  (auto-tile))
+  (auto-tile (visible-clients)))
 
 ; remove a client from the master area
 (define (remove-master)
   (if (> master-count 1)
       (set! master-count (- master-count 1)))
-  (auto-tile))
+  (auto-tile (visible-clients)))
 
 ; grow the master area
 (define (grow-master amount)
   (if (< master-perc (- 100 (+ amount 1)))
       (set! master-perc (+ master-perc amount)))
-  (auto-tile))
+  (auto-tile (visible-clients)))
 
 ; shrink the master area
 (define (shrink-master amount)
   (if (>= master-perc (+ amount 1))
       (set! master-perc (- master-perc amount)))
-  (auto-tile))
+  (auto-tile (visible-clients)))
 
 ;; Set up hooks
 ; map-client
 (add-hook! map-client-hook focus-client)
 (add-hook! map-client-hook (lambda (client)
-                             (auto-tile)))
+                             (auto-tile (visible-clients))))
 
 ; unmap-client
 (add-hook! unmap-client-hook (lambda (client)
                                (focus-client (next-client client))))
 (add-hook! unmap-client-hook (lambda (client)
-                               (auto-tile)))
+                               (auto-tile (visible-clients))))
 
 ; destroy-client
 (add-hook! destroy-client-hook (lambda (client)
                                  (focus-client (next-client client))))
 (add-hook! destroy-client-hook (lambda (client)
-                                 (auto-tile)))
+                                 (auto-tile (visible-clients))))
 
 ;; Default keybindings
 ; add a master, mod4-i
@@ -213,4 +207,4 @@
 (bind-key 64 "s" (lambda ()
                    (begin
                      (swap-master)
-                     (auto-tile))))
+                     (auto-tile (visible-clients)))))

@@ -26,6 +26,9 @@
 (define border-width 1)
 (define gap 2)
 
+; load window tagging
+(load "tags.scm")
+
 ; commands
 ; path to terminal program
 (define term-program '("xterm"))
@@ -53,19 +56,21 @@
       (if (not (unspecified? focused))
           (draw-focus-border focused focus-color)))))
 
-; focus-client
-(add-hook! focus-client-hook (lambda (client)
-                               (draw-borders (all-clients) norm-border-color
-                                             focus-border-color)))
-(add-hook! auto-tile-hook (lambda (clients)
-                            (draw-borders clients norm-border-color
-                                          focus-border-color)))
-
 (define (focus-next)
-  (focus-client (next-client (get-focus-client))))
+  (let ((focused (get-focus-client))
+        (visible (visible-clients)))
+    (if (not (null? visible))
+        (if (unspecified? focused)
+            (focus-client (car visible))
+            (focus-client (next-client focused))))))
 
 (define (focus-prev)
-  (focus-client (prev-client (get-focus-client))))
+  (let ((focused (get-focus-client))
+        (visible (visible-clients)))
+    (if (not (null? visible))
+        (if (unspecified? focused)
+            (focus-client (car visible))
+            (focus-client (prev-client focused))))))
 
 (define (close)
   (destroy-client (get-focus-client)))
@@ -93,8 +98,17 @@
 (bind-key 4 "s" (lambda ()
                    (begin
                      (swap-master)
-                     (auto-tile))))
+                     (auto-tile (visible-clients)))))
 
 ; close window, ctrl-shift-c
 (bind-key 5 "c" close)
 
+; hooks
+; redraw window borders upon focus change
+(add-hook! focus-client-hook (lambda (client)
+                               (draw-borders (visible-clients) norm-border-color
+                                             focus-border-color)))
+; redraw borders upon auto-tiling
+(add-hook! auto-tile-hook (lambda (clients)
+                            (draw-borders clients norm-border-color
+                                          focus-border-color)))
