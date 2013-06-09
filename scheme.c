@@ -483,6 +483,7 @@ void *init_scheme(void *data)
     scm_c_define_gsubr("log", 1, 0, 0, &scm_nwm_log);
     scm_c_define_gsubr("trace-x-events", 1, 0, 0, &scm_trace_x_events);
 
+    scm_c_define("create-client-hook", scm_make_hook(scm_from_int(1)));
     scm_c_define("map-client-hook", scm_make_hook(scm_from_int(1)));
     scm_c_define("unmap-client-hook", scm_make_hook(scm_from_int(1)));
     scm_c_define("destroy-client-hook", scm_make_hook(scm_from_int(1)));

@@ -446,6 +446,7 @@ void set_focus_client(client_t *client)
 
 client_t *manage_window(xcb_window_t window)
 {
+    SCM client_smob;
     client_t *client = client_init(client_alloc());
     client->window = window;
     sglib_client_t_add(&client_list, client);
@@ -453,6 +454,9 @@ client_t *manage_window(xcb_window_t window)
     read_client_geometry(client);
     client->border_width = 0;
     update_client_geometry(client);
+
+    client_smob = scm_new_smob(client_tag, (scm_t_bits) client);
+    run_hook("create-client-hook", scm_list_1(client_smob));
 
     map_client(client);
     return client;    
