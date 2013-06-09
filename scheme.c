@@ -202,8 +202,8 @@ static SCM scm_visible_clients(void)
         if (is_mapped(client)) {
             SCM_NEWSMOB(smob, client_tag, client);
             clients = scm_append(scm_list_2(clients, scm_list_1(smob)));
-            client = client->next;
         }
+        client = client->next;
     }
     return clients;
 }
