@@ -324,6 +324,9 @@ static SCM scm_focus_client(SCM client_smob)
     if (!client)
         return SCM_UNSPECIFIED;
 
+    if (!is_mapped(client))
+        return SCM_UNSPECIFIED;
+
     set_focus_client(client);
     return SCM_UNSPECIFIED;
 }
