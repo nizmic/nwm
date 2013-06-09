@@ -56,6 +56,16 @@
       (if (not (unspecified? focused))
           (draw-focus-border focused focus-color)))))
 
+; hooks
+; redraw window borders upon focus change
+(add-hook! focus-client-hook (lambda (client)
+                               (draw-borders (visible-clients) norm-border-color
+                                             focus-border-color)))
+; redraw borders upon auto-tiling
+(add-hook! auto-tile-hook (lambda (clients)
+                            (draw-borders clients norm-border-color
+                                          focus-border-color)))
+
 (define (focus-next)
   (let ((focused (get-focus-client))
         (visible (visible-clients)))
@@ -102,13 +112,3 @@
 
 ; close window, ctrl-shift-c
 (bind-key 5 "c" close)
-
-; hooks
-; redraw window borders upon focus change
-(add-hook! focus-client-hook (lambda (client)
-                               (draw-borders (visible-clients) norm-border-color
-                                             focus-border-color)))
-; redraw borders upon auto-tiling
-(add-hook! auto-tile-hook (lambda (clients)
-                            (draw-borders clients norm-border-color
-                                          focus-border-color)))
