@@ -1,5 +1,6 @@
 ;;; Sample init.scm file for nwm
 ;;;
+;;; Copyright (C) 2013  Brandon Invergo
 ;;; Copyright (C) 2010-2012  Nathan Sullivan
 ;;;
 ;;; This program is free software; you can redistribute it and/or 
@@ -18,85 +19,96 @@
 ;;; 02110-1301, USA 
 ;;;
 
-; path to terminal program
-(define term-program-path "/usr/bin/xterm")
-
-; number of "master" windows
+; auto-tile options
+(load "auto-tile.scm")
 (define master-count 1)
+(define master-width 50)
+(define border-width 1)
+(define gap 2)
 
-(define (arrange-client client x y width height)
-  (move-client client x y)
-  (resize-client client width height)
-  (map-client client))
+; load window tagging
+(load "tags.scm")
 
-(define (first-n l n) 
-  (let ((res (list))) 
-    (do ((idx 0 (+ idx 1))) 
-	((= idx n) (reverse res)) 
-      (set! res (cons (list-ref l idx) res)))))
+; commands
+; path to terminal program
+(define term-program '("xterm"))
+; you can supply arguments like so:
+; (define term-program '("xterm" "-e" "screen"))
 
-(define (rest-n l n)
-  (cond
-   ((> n (length l)) (list))
-   ((= n 0) l)
-   (#t (rest-n (cdr l) (- n 1)))))
+; window borders
+(define norm-border-color #x2b2b2b)
+(define focus-border-color #x6CA0A3)
 
-(define (split-vertical-iter clients x width increment cur)
-  (arrange-client (car clients) x (+ cur 1) width (- increment 2))
-  (if (= (length clients) 1)
-      #t
-      (split-vertical-iter (cdr clients) x width increment (+ cur increment))))
+(define (draw-norm-borders client-list color)
+  (if (null? client-list)
+      (clear)
+      (begin
+        (draw-norm-borders (cdr client-list) color)
+        (draw-border (car client-list) color border-width))))
 
-(define (split-vertical clients x width)
-  (let ((increment (floor (/ (screen-height) (length clients)))))
-    (split-vertical-iter clients x width increment 0)))
+(define (draw-focus-border client color)
+  (draw-border client color border-width))
 
-(define (arrange-hook)
-  (let ((clients (all-clients))
-	(client-count (length (all-clients)))
-	(half-screen-width (floor (/ (screen-width) 2))))
-    (cond
-     ((= client-count 1) (arrange-client (car clients)
-					 1 1
-					 (- (screen-width) 2)
-					 (- (screen-height) 2)))
-     ((> client-count 1)
-      (split-vertical (first-n clients master-count)
-		      1 (- half-screen-width 2))
-      (split-vertical (rest-n clients master-count)
-		      (+ half-screen-width 1) (- half-screen-width 2))))))
+(define (draw-borders client-list norm-color focus-color)
+  (let ((focused (get-focus-client)))
+    (begin
+      (draw-norm-borders client-list norm-color)
+      (if (not (unspecified? focused))
+          (draw-focus-border focused focus-color)))))
 
-(define (add-master)
-  (set! master-count (+ master-count 1))
-  (arrange-hook))
-
-(define (remove-master)
-  (set! master-count (- master-count 1))
-  (arrange-hook))
+; hooks
+; redraw window borders upon focus change
+(add-hook! focus-client-hook (lambda (client)
+                               (draw-borders (visible-clients) norm-border-color
+                                             focus-border-color)))
+; redraw borders upon auto-tiling
+(add-hook! auto-tile-hook (lambda (clients)
+                            (draw-borders clients norm-border-color
+                                          focus-border-color)))
 
 (define (focus-next)
-  (focus-client (next-client (get-focus-client))))
+  (let ((focused (get-focus-client))
+        (visible (visible-clients)))
+    (if (not (null? visible))
+        (if (unspecified? focused)
+            (focus-client (car visible))
+            (focus-client (next-client focused))))))
 
 (define (focus-prev)
-  (focus-client (prev-client (get-focus-client))))
+  (let ((focused (get-focus-client))
+        (visible (visible-clients)))
+    (if (not (null? visible))
+        (if (unspecified? focused)
+            (focus-client (car visible))
+            (focus-client (prev-client focused))))))
+
+(define (close)
+  (destroy-client (get-focus-client)))
 
 (define (launch-term)
-  (launch-program term-program-path))
-
-; run arrange-hook when hit ctrl-spacebar
-(bind-key 4 (string->number "20" 16) arrange-hook)
-
-; add a master, ctrl-;
-(bind-key 4 (string->number "3B" 16) add-master)
-
-; remove a master, ctrl-'
-(bind-key 4 (string->number "27" 16) remove-master)
+  (launch-program term-program))
 
 ; focus next, ctrl-j
-(bind-key 4 (string->number "6A" 16) focus-next)
+(bind-key 4 "j" focus-next)
 
 ; focus prev, ctrl-k
-(bind-key 4 (string->number "6B" 16) focus-prev)
+(bind-key 4 "k" focus-prev)
+
+; grow master, ctrl-l
+(bind-key 4 "l" (lambda ()
+                  (grow-master 5)))
+
+; shrink master, ctrl-h
+(bind-key 4 "h" (lambda ()
+                  (shrink-master 5)))
 
 ; launch terminal, ctrl-enter
-(bind-key 4 (string->number "FF0D" 16) launch-term)
+(bind-key 4 "Enter" launch-term)
+
+(bind-key 4 "s" (lambda ()
+                   (begin
+                     (swap-master)
+                     (auto-tile (visible-clients)))))
+
+; close window, ctrl-shift-c
+(bind-key 5 "c" close)

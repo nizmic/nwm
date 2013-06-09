@@ -1,4 +1,5 @@
 /* nwm - a programmable window manager
+ * Copyright (C) 2013  Brandon Invergo
  * Copyright (C) 2010-2012  Nathan Sullivan
  *
  * This program is free software; you can redistribute it and/or 
@@ -31,12 +32,16 @@
 #include <xcb/xcb_aux.h>
 #include <xcb/xcb_keysyms.h>
 #include <xcb/xinerama.h>
+#include <xcb/xcb_atom.h>
+#include <xcb/xcb_icccm.h>
+#include <X11/keysymdef.h>
 
 #define XK_MISCELLANY
 #define XK_LATIN1
 #include <X11/keysymdef.h>
 
 #include "nwm.h"
+#include "scheme.h"
 #include "repl-server.h"
 
 typedef void (*event_loop_task_func)(void);
@@ -56,7 +61,7 @@ void init_wm_conf(void)
 
 client_t *client_alloc(void)
 {
-    return (client_t *)malloc(sizeof(client_t));
+    return (client_t *) scm_gc_malloc(sizeof(client_t), "client");
 }
 
 client_t *client_init(client_t *client)
@@ -113,24 +118,28 @@ client_t * find_client(xcb_window_t win)
     return NULL;
 }
 
-void draw_border(client_t *client)
+void clear_root(void)
 {
-    /* Clear root window to erase any old borders */
     xcb_aux_clear_window(wm_conf.connection, wm_conf.screen->root);
+    xcb_map_window(wm_conf.connection, wm_conf.screen->root);
+    xcb_flush(wm_conf.connection);
+}
 
-    xcb_gcontext_t orange = xcb_generate_id(wm_conf.connection);
+void draw_border(client_t *client, uint32_t color, int width)
+{
+    xcb_gcontext_t color_context = xcb_generate_id(wm_conf.connection);
     uint32_t mask = XCB_GC_FOREGROUND;
-    uint32_t value[] = { 0xffffa500 };
-    xcb_create_gc(wm_conf.connection, orange, wm_conf.screen->root, mask, value);
-    xcb_rectangle_t rect[] = {{ client->rect.x - 2,
-                                client->rect.y - 2,
-                                client->rect.width + 4,
-                                client->rect.height + 4 }};
+    uint32_t value[] = { color };
+    xcb_create_gc(wm_conf.connection, color_context, wm_conf.screen->root, mask, value);
+    xcb_rectangle_t rect[] = {{ client->rect.x - (2 * width),
+                                client->rect.y - (2 * width),
+                                client->rect.width + (4 * width),
+                                client->rect.height + (4 * width) }};
 
     /* Draw the new border */
-    xcb_poly_fill_rectangle(wm_conf.connection, wm_conf.screen->root, orange, 1, rect);
+    xcb_poly_fill_rectangle(wm_conf.connection, wm_conf.screen->root, color_context, 1, rect);
 
-    xcb_free_gc(wm_conf.connection, orange);
+    xcb_free_gc(wm_conf.connection, color_context);
     xcb_map_window(wm_conf.connection, wm_conf.screen->root);
     xcb_flush(wm_conf.connection);
 }
@@ -177,8 +186,7 @@ int handle_destroy_notify_event(void *data, xcb_connection_t *c, xcb_destroy_not
     if (client) {
         fprintf(stderr, "destroy notify: removing client window %u\n", client->window);
         sglib_client_t_delete(&client_list, client);
-        free(client);
-        run_arrange_hook();
+        destroy_client(client);
     }
     else {
         fprintf(stderr, "destroy notify: client window %u not found\n", event->window);
@@ -238,12 +246,13 @@ int handle_key_press_event(void *data, xcb_connection_t *c, xcb_key_press_event_
     while (binding) {
         if (binding->keysym == keysym && binding->mod_mask == event->state) {
             key_proc = binding->scm_proc;
+            break;
         }
         binding = binding->next;
     }
 
     if (key_proc != SCM_UNDEFINED)
-        scm_call_0(key_proc);
+        scm_call(key_proc, SCM_UNDEFINED);
 
     return 0;
 }
@@ -255,14 +264,82 @@ int handle_key_release_event(void *data, xcb_connection_t *c, xcb_key_release_ev
 
 void map_client(client_t *client)
 {
+    SCM client_smob = SCM_EOL;
     xcb_map_window(wm_conf.connection, client->window);
     /* the map won't happen immediately unless we flush the connection */
     xcb_flush(wm_conf.connection);
+    client_smob = scm_new_smob(client_tag, (scm_t_bits) client);
+    run_hook("map-client-hook", scm_list_1(client_smob));
+}
+
+void unmap_client(client_t *client)
+{
+    SCM client_smob;
+    xcb_unmap_window(wm_conf.connection, client->window);
+    xcb_flush(wm_conf.connection);
+    client_smob = scm_new_smob(client_tag, (scm_t_bits) client);
+    run_hook("unmap-client-hook", scm_list_1(client_smob));
+}
+
+bool is_mapped(client_t *client)
+{
+    xcb_get_window_attributes_cookie_t cookie;
+    xcb_get_window_attributes_reply_t *reply;
+    cookie = xcb_get_window_attributes(wm_conf.connection, client->window);
+    reply = xcb_get_window_attributes_reply(wm_conf.connection, cookie, NULL);
+    if (!reply)
+        return 0;
+
+    if (reply->map_state == 0)
+        return false;
+    else
+        return true;
+}
+
+void destroy_client(client_t *client)
+{
+    SCM client_smob;
+    xcb_get_property_cookie_t cookie;
+    xcb_icccm_get_wm_protocols_reply_t protocols;
+    xcb_atom_t del_win_atom;
+    xcb_atom_t win_prot_atom;
+    uint32_t i;
+    int delete = 0;
+    
+    del_win_atom = get_atom("WM_DELETE_WINDOW");
+    win_prot_atom = get_atom("WM_PROTOCOLS");
+    cookie = xcb_icccm_get_wm_protocols_unchecked(wm_conf.connection, client->window,
+                                                  win_prot_atom);
+    if (xcb_icccm_get_wm_protocols_reply(wm_conf.connection, cookie, &protocols,
+                                         NULL) == 1) {
+        for (i = 0; i < protocols.atoms_len; i++)
+            if (protocols.atoms[i] == del_win_atom)
+                delete = 1;
+    }
+    xcb_icccm_get_wm_protocols_reply_wipe(&protocols);
+    if (delete == 1) {
+        xcb_client_message_event_t ev = {
+            .response_type = XCB_CLIENT_MESSAGE,
+            .format = 32,
+            .sequence = 0,
+            .window = client->window,
+            .type = win_prot_atom,
+            .data.data32 = { del_win_atom, XCB_CURRENT_TIME }
+        };
+        xcb_send_event(wm_conf.connection, 0, client->window, XCB_EVENT_MASK_NO_EVENT,
+                       (char *) &ev);
+    }
+    else
+        xcb_kill_client(wm_conf.connection, client->window);
+    xcb_flush(wm_conf.connection);
+    client_smob = scm_new_smob(client_tag, (scm_t_bits) client);
+    run_hook("destroy-client-hook", scm_list_1(client_smob));
 }
 
 /* Use the geometry data from client structure to configure the X window */
 void update_client_geometry(client_t *client)
 {
+    SCM client_smob;
     uint16_t config_win_mask = 0;
     uint32_t config_win_vals[5];
 
@@ -284,6 +361,8 @@ void update_client_geometry(client_t *client)
     config_win_vals[4] = client->border_width;
 
     xcb_configure_window(wm_conf.connection, client->window, config_win_mask, config_win_vals);
+    client_smob = scm_new_smob(client_tag, (scm_t_bits) client);
+    run_hook("update-client-hook", scm_list_1(client_smob));
 }
 
 /* Read the X window geometry and record it in the client structure */
@@ -306,38 +385,29 @@ void read_client_geometry(client_t *client)
     }
 }
 
-void fallback_arrange(void)
+void get_client_name(client_t *client, char *name_out)
 {
-    int clients_len = sglib_client_t_len(client_list);
-    if (clients_len == 0)
-        return;
-    uint16_t screen_width = wm_conf.screen->width_in_pixels;
-    uint16_t screen_height = wm_conf.screen->height_in_pixels;
-    uint16_t client_width = screen_width / clients_len;
-    client_t *client = client_list;
-    int i = 0;
+    xcb_get_property_cookie_t c;
+    xcb_icccm_get_text_property_reply_t *r;
+    char *name = "";
+    int res;
+    int len = 0;
 
-    fprintf(stderr, "Fallback window arrangement is being used. You should define arrange-hook.\n");
-
-    while (i < clients_len) {
-        client->rect.x = i * client_width;
-        client->rect.y = 0;
-        client->rect.width = client_width;
-        client->rect.height = screen_height;
-        client->border_width = 0;
-        update_client_geometry(client);
-        ++i;
-        client = client->next;
+    c = xcb_icccm_get_wm_name(wm_conf.connection, client->window);
+    res = xcb_icccm_get_wm_name_reply(wm_conf.connection, c, r, NULL);
+    if (res == 1) {
+        len = xcb_get_property_value_length((xcb_get_property_reply_t *) r);
+        if (len > 0)
+            name = (char *)xcb_get_property_value((xcb_get_property_reply_t *) r);
+        /* sort of arbitrary name length limit (leaving one byte for
+         * the null character) */
+        if (len > 255)
+            len = 255;
     }
-
-    client_t *focus_client = get_focus_client();
-    if (focus_client) {
-        draw_border(focus_client);
-    }
-    else if (client_list) {
-        set_focus_client(client_list);
-        draw_border(client_list);
-    }
+    else
+        fprintf(stderr, "failed to get wm_name\n");
+    free(r);
+    strncpy(name_out, name, len+1);
 }
 
 client_t *get_focus_client(void)
@@ -345,6 +415,7 @@ client_t *get_focus_client(void)
     xcb_get_input_focus_cookie_t c = xcb_get_input_focus(wm_conf.connection);
     xcb_get_input_focus_reply_t *r = xcb_get_input_focus_reply(wm_conf.connection, c, NULL);
     client_t *focus_client = NULL;
+
     if (r) {
         focus_client = find_client(r->focus);
         free(r);
@@ -354,39 +425,28 @@ client_t *get_focus_client(void)
 
 void set_focus_client(client_t *client)
 {
+    SCM client_smob;
     xcb_void_cookie_t c = xcb_set_input_focus_checked(wm_conf.connection, 
                                                       XCB_INPUT_FOCUS_POINTER_ROOT,
                                                       client->window,
                                                       XCB_CURRENT_TIME);
     xcb_generic_error_t *e = xcb_request_check(wm_conf.connection, c);
+    const static uint32_t values[] = {XCB_STACK_MODE_ABOVE};
+    
     if (e) {
         fprintf(stderr, "xcb_set_input_focus_checked error: %s\n", 
                 xcb_event_get_error_label(e->error_code));
         free(e);
     }
-}
-
-void run_arrange_hook(void)
-{
-    SCM arrange_hook_sym = scm_from_locale_symbol("arrange-hook");
-    if (scm_defined_p(arrange_hook_sym, SCM_UNDEFINED) == SCM_BOOL_T) {
-        scm_c_eval_string("(arrange-hook)");
-    }
-    else {
-        fallback_arrange();
-    }
-    client_t *focus_client = get_focus_client();
-    if (focus_client) {
-        draw_border(focus_client);
-    }
-    else if (client_list) {
-        set_focus_client(client_list);
-        draw_border(client_list);
-    }
+    xcb_configure_window(wm_conf.connection, client->window,
+                         XCB_CONFIG_WINDOW_STACK_MODE, values);
+    client_smob = scm_new_smob(client_tag, (scm_t_bits) client);
+    run_hook("focus-client-hook", scm_list_1(client_smob));
 }
 
 client_t *manage_window(xcb_window_t window)
 {
+    SCM client_smob;
     client_t *client = client_init(client_alloc());
     client->window = window;
     sglib_client_t_add(&client_list, client);
@@ -394,10 +454,11 @@ client_t *manage_window(xcb_window_t window)
     read_client_geometry(client);
     client->border_width = 0;
     update_client_geometry(client);
-    xcb_map_window(wm_conf.connection, client->window);
 
-    run_arrange_hook();
+    client_smob = scm_new_smob(client_tag, (scm_t_bits) client);
+    run_hook("create-client-hook", scm_list_1(client_smob));
 
+    map_client(client);
     return client;    
 }
 
@@ -423,9 +484,7 @@ int handle_map_request_event(void *data, xcb_connection_t *c, xcb_map_request_ev
     if (!client)
         client = manage_window(event->window);
 
-    xcb_map_window(c, event->window);
-
-    run_arrange_hook();
+    map_client(client);
 
     free(win_attrs_reply);
 
@@ -438,7 +497,7 @@ int handle_unmap_notify_event(void *data, xcb_connection_t *c, xcb_unmap_notify_
     if (client && XCB_EVENT_SENT(event)) {
         fprintf(stderr, "unmap notify: unmapping window %u\n", client->window);
         sglib_client_t_delete(&client_list, client);
-        xcb_unmap_window(wm_conf.connection, client->window);
+        unmap_client(client);
         xcb_map_window(wm_conf.connection, event->event);
         free(client);
     }
@@ -496,7 +555,22 @@ void set_exclusive_error_handler(xcb_event_handlers_t *handlers, xcb_generic_err
         xcb_event_set_error_handler(handlers, i, handler, NULL);
 }
 
+xcb_atom_t get_atom(char *atom_name)
+{
+    xcb_intern_atom_cookie_t atom_cookie;
+    xcb_atom_t atom;
+    xcb_intern_atom_reply_t *reply;
 
+    atom_cookie = xcb_intern_atom(wm_conf.connection, 0, strlen(atom_name), atom_name);
+    reply = xcb_intern_atom_reply(wm_conf.connection, atom_cookie, NULL);
+    if (reply != NULL) {
+        atom = reply->atom;
+        free(reply);
+        return atom;
+    }
+
+    return 0;
+}
 
 void scan_windows(void)
 {
@@ -522,6 +596,8 @@ void scan_windows(void)
         root_tree_replies[screen_idx] = xcb_query_tree_reply(wm_conf.connection,
                                                              root_tree_cookies[screen_idx],
                                                              NULL);
+        if (!root_tree_replies[screen_idx])
+            continue;
         wins = xcb_query_tree_children(root_tree_replies[screen_idx]);
         if (!wins)
             fprintf(stderr, "failed to get child tree for window %u\n", root_wins[screen_idx]);
@@ -535,12 +611,18 @@ void scan_windows(void)
             child_win = wins[i];
             fprintf(stderr, "  child window %u\n", child_win);
             client_t *client = find_client(child_win);
-            if (!client) {
-                client = client_init(client_alloc());
-                client->window = child_win;
-                sglib_client_t_add(&client_list, client);
-            }
-            read_client_geometry(client);
+            /* TODO: verify that the following commented-out code is
+               not needed.  Keeping it causes phantom clients for some
+               background processes like dbus and pulseaudio started
+               from .xinitrc */
+
+            /* if (!client) { */
+            /*     client = client_init(client_alloc()); */
+            /*     client->window = child_win; */
+            /*     sglib_client_t_add(&client_list, client); */
+            /* } */
+            if (client)
+              read_client_geometry(client);
         }
     }
 
@@ -584,6 +666,36 @@ void xinerama_test(void)
     }
 }
 
+xcb_keysym_t get_keysym(char *key)
+{
+    xcb_keysym_t keysym = NULL;
+    if (strlen(key) == 1)
+        keysym = (int)key[0];
+    else {
+        if (!strcmp(key, "Enter"))
+            keysym = XK_Return;
+        else if (!strcmp(key, "Backspace"))
+            keysym = XK_BackSpace;
+        else if (!strcmp(key, "Delete"))
+            keysym = XK_Delete;
+        else if (!strcmp(key, "Escape"))
+            keysym = XK_Escape;
+        else if (!strcmp(key, "Tab"))
+            keysym = XK_Tab;
+        else if (!strcmp(key, "Left"))
+            keysym = XK_Left;
+        else if (!strcmp(key, "Right"))
+            keysym = XK_Right;
+        else if (!strcmp(key, "Down"))
+            keysym = XK_Down;
+        else if (!strcmp(key, "Up"))
+            keysym = XK_Up;
+        else if (!strcmp(key, "Space"))
+            keysym = XK_space;
+    }
+    return keysym;
+}
+
 int bind_key(xcb_key_but_mask_t mod_mask, xcb_keysym_t keysym, SCM proc)
 {
     xcb_grab_server(wm_conf.connection);
@@ -617,15 +729,12 @@ void auto_focus_pointer(void)
                                                                c,
                                                                NULL);
     if (reply) {
-        client_t *focus_client = get_focus_client();
         client_t *pointer_client = find_client(reply->child);
         if (!wm_conf.pointer_window)  /* pointer_window hasn't been initialized yet */
             wm_conf.pointer_window = reply->child;
         if (pointer_client) {
-            if (wm_conf.pointer_window != pointer_client->window) {
+            if (wm_conf.pointer_window != pointer_client->window)
                 set_focus_client(pointer_client);
-                draw_border(pointer_client);
-            }
             wm_conf.pointer_window = pointer_client->window;
         }
         free(reply);
@@ -803,6 +912,9 @@ int main(int argc, char **argv)
     fprintf(stderr, "entering event loop\n");
     event_loop();
 
+    xcb_set_input_focus(connection, XCB_NONE, XCB_INPUT_FOCUS_POINTER_ROOT,
+                        XCB_CURRENT_TIME);
+    xcb_flush(connection);
     xcb_disconnect(connection);
 
     return 0;
